@@ -126,8 +126,8 @@ export const winfromHigherRanking = (player1: Player, player2: Player) : any => 
 export const lostToLowerRankingThanOpponent = (player1: Player, player2: Player) : any => {
   const p1L = player1.parsedPreviousMatches.filter(m => m.result === 'lost')
   const p2L = player2.parsedPreviousMatches.filter(m => m.result === 'lost')
-  const p1LMLower = player1.currentRanking === 1000 ? [] : p1L.filter(p => p.player.currentRanking > player2.currentRanking)
-  const p2LMLower = player2.currentRanking === 1000 ? [] : p2L.filter(p => p.player.currentRanking > player1.currentRanking)
+  const p1LMLower = player1.currentRanking === 1000 ? [] : p1L.filter(p => p.player.currentRanking >= player2.currentRanking)
+  const p2LMLower = player2.currentRanking === 1000 ? [] : p2L.filter(p => p.player.currentRanking >= player1.currentRanking)
 
   const mp1WLindex = []
   player1.parsedPreviousMatches.forEach((pm, index) => {

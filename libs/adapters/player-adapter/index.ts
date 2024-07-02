@@ -7,6 +7,7 @@ import { getHigherRanking, getRankingDiff,
   winPercentage, wonL20, wonL10, wonL5, lostToLowerRanking,
   lostToLowerRankingThanOpponent, winFromHigherRankingThanOpponent,
   winfromHigherRanking } from './src/utils/comparePlayer';
+import { SportEvent } from "@abcfinite/tennislive-client/src/types/sportEvent";
 
 export default class PlayerAdapter {
   async checkPlayer(player1Name: string, player2Name: string, player1Odd: number, Player2Odd: number) {
@@ -17,24 +18,28 @@ export default class PlayerAdapter {
     return result
   }
 
-  async checkPlayerObject(player1: Player, player2: Player) {
-    const result = await this.matchesSummaryByPlayerObject(player1, player2)
+  async checkSportEvent(sportEvent: SportEvent) {
+    const result = await this.matchesSummaryBySportEvent(sportEvent)
 
     result.analysis = await new MatchAdapter().similarMatch(result)
 
     return result
   }
 
-  async matchesSummaryByPlayerObject(player1Object: Player, player2Object: Player) {
+  async matchesSummaryBySportEvent(sportEvent: SportEvent) {
     const tennisLiveClient = new TennisliveClient()
-    const player1 = await tennisLiveClient.getPlayer(null, player1Object.url)
-    const player2 = await tennisLiveClient.getPlayer(null, player2Object.url)
+    const player1 = await tennisLiveClient.getPlayer(null, sportEvent.player1.url)
+    const player2 = await tennisLiveClient.getPlayer(null, sportEvent.player2.url)
+    var p10match = {}
+    var p20match = {}
 
     const date = new Date();
     const formattedDate = `${date.getDate()}.${date.getMonth() + 1}.${date.getFullYear()}`;
     const result = {
-      stage: '',
+      winner: 0,
       type: player1.type,
+      time: sportEvent.time,
+      stage: sportEvent.stage,
       date: formattedDate,
       analysis: {},
       higherRanking: getHigherRanking(player1, player2),
@@ -66,7 +71,6 @@ export default class PlayerAdapter {
     const date = new Date();
     const formattedDate = `${date.getDate()}.${date.getMonth() + 1}.${date.getFullYear()}`;
     const result = {
-      stage: '',
       type: player1.type,
       date: formattedDate,
       analysis: {},

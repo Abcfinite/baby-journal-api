@@ -20,13 +20,16 @@
     "downlevelIteration": true,
     "sourceMap": true,
     "paths": {
+      "@abcfinite/finished-adapter": ["./libs/adapters/finished-adapter"],
       "@abcfinite/schedule-adapter": ["./libs/adapters/schedule-adapter"],
       "@abcfinite/player-adapter": ["./libs/adapters/player-adapter"],
       "@abcfinite/match-adapter": ["./libs/adapters/match-adapter"],
       "@abcfinite/bet-adapter": ["./libs/adapters/bet-adapter"],
+      "@abcfinite/tips-adapter": ["./libs/adapters/tips-adapter"],
       "@abcfinite/ladbrokes-client": ["./libs/client/ladbrokes-client"],
       "@abcfinite/http-api-client": ["./libs/client/http-api-client"],
       "@abcfinite/tennislive-client": ["./libs/client/tennislive-client"],
+      "@abcfinite/betapi-client": ["./libs/client/betapi-client"],
       "@abcfinite/s3-client": ["./libs/client/s3-client-custom"],
     }
   }

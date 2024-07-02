@@ -1,6 +1,6 @@
 import S3ClientCustom from "@abcfinite/s3-client-custom"
 import HttpApiClient from "@abcfinite/http-api-client"
-import ScheduleParser from "../parsers/scheduleParser"
+import ScheduleParser from "../parsers/sportEventParser"
 import { SportEvent } from "../types/sportEvent"
 
 export default class ScheduleService {
@@ -11,9 +11,6 @@ export default class ScheduleService {
   async getSchedule() : Promise<SportEvent[]> {
     const scheduleHtmlfileList = await new S3ClientCustom().getFileList('tennis-match-schedule-html')
     var htmlResult = ''
-
-    console.log('>>>scheduleHtmlfileList>>>')
-    console.log(scheduleHtmlfileList)
 
     if (scheduleHtmlfileList.length === 0) {
       const headers = {
@@ -37,5 +34,4 @@ export default class ScheduleService {
 
     return ScheduleParser.parse(htmlResult)
   }
-
 }

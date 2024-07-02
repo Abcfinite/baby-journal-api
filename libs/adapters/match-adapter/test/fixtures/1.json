@@ -1,0 +1,935 @@
+{
+    "stage": "",
+    "type": "atp",
+    "date": "8.4.2024",
+    "analysis": {
+        "winLoseRanking": {
+            "player1": 0,
+            "player2": -6
+        },
+        "winLoseScore": {
+            "player-1": 400,
+            "player-2": -700
+        },
+        "highLowRanking": {
+            "player1": {
+                "ranking": 368,
+                "lostLowest": 649,
+                "winHighest": 263
+            },
+            "player2": {
+                "ranking": 403,
+                "lostLowest": 1000,
+                "winHighest": 437
+            },
+            "rankingDiff": 35
+        },
+        "betAgainstOdd": {
+            "nonFavPlayerWonToHigherLevelThanFav": false
+        },
+        "redFlag": {
+            "doNotBet": {
+                "favPlayerLostToLowerLevelThanNonFav": true
+            },
+            "justLostFromLowerRanking": {
+                "player1": false,
+                "player2": true
+            }
+        },
+        "yellowFlag": {
+            "playedBefore": {
+                "player1": [],
+                "Player2": []
+            },
+            "manualCheck": [
+                "retired InTheLast 60 days",
+                "non fav highest ranking is top 20"
+            ]
+        },
+        "benchmarkPlayer": {
+            "bothPlayed": [
+                "Enrico Dalla Valle",
+                "Nikoloz Basilashvili"
+            ],
+            "previousPlayers": {
+                "players": {
+                    "p1LastWon": "Jakob Schnaitter",
+                    "p2LastWon": "Neil Oberleitner"
+                },
+                "numbers": {
+                    "p1_v_p1won": {
+                        "p1": 9,
+                        "p1Won": -9
+                    },
+                    "p2_v_p1won": {
+                        "p2": 7,
+                        "p1Won": -6
+                    },
+                    "p2_v_p2won": {
+                        "p2": 2,
+                        "p2Won": -6
+                    },
+                    "p1_v_p2won": {
+                        "p1": 6,
+                        "p2Won": -7
+                    }
+                }
+            }
+        },
+        "age": {
+            "player1": 21,
+            "player2": 25
+        },
+        "gap": 1
+    },
+    "higherRanking": "Elmer Moller",
+    "rankingDifferent": 35,
+    "winPercentage": {
+        "player1": "Elmer Moller => 66.45569620253164%",
+        "player2": "Dan Added => 56.72268907563025%",
+        "diff": "9.733007126901391%"
+    },
+    "wonL5": {
+        "player1": "Elmer Moller => 5",
+        "player2": "Dan Added => 2"
+    },
+    "wonL10": {
+        "player1": "Elmer Moller => 8",
+        "player2": "Dan Added => 4"
+    },
+    "wonL20": {
+        "player1": "Elmer Moller => 15",
+        "player2": "Dan Added => 9"
+    },
+    "lostToLowerRanking": {
+        "player1": {
+            "name": "Elmer Moller",
+            "number": 3,
+            "order": [
+                6,
+                11,
+                19
+            ]
+        },
+        "player2": {
+            "name": "Dan Added",
+            "number": 5,
+            "order": [
+                1,
+                3,
+                4,
+                6,
+                8
+            ]
+        }
+    },
+    "lostToLowerRankingThanOpponent": {
+        "player1": {
+            "name": "Elmer Moller",
+            "number": 3,
+            "order": [
+                6,
+                11,
+                19
+            ]
+        },
+        "player2": {
+            "name": "Dan Added",
+            "number": 6,
+            "order": [
+                1,
+                3,
+                4,
+                6,
+                8,
+                15
+            ]
+        }
+    },
+    "winfromHigherRanking": {
+        "player1": {
+            "name": "Elmer Moller",
+            "number": 3,
+            "order": [
+                15,
+                17,
+                18
+            ]
+        },
+        "player2": {
+            "name": "Dan Added",
+            "number": 3,
+            "order": []
+        }
+    },
+    "winFromHigherRankingThanOpponent": {
+        "player1": {
+            "name": "Elmer Moller",
+            "number": 3,
+            "order": [
+                15,
+                17,
+                18
+            ]
+        },
+        "player2": {
+            "name": "Dan Added",
+            "number": 0,
+            "order": []
+        }
+    },
+    "odds": {
+        "player1": 1.36,
+        "player2": 2.88
+    },
+    "player1": {
+        "id": "elmermoller#09.07.03",
+        "name": "Elmer Moller",
+        "country": "Denmark",
+        "dob": "09.07.03",
+        "currentRanking": 368,
+        "highestRanking": 357,
+        "matchesTotal": 158,
+        "matchesWon": 105,
+        "url": "",
+        "type": "atp",
+        "previousMatches": null,
+        "parsedPreviousMatches": [
+            {
+                "date": "07.04.24",
+                "player": {
+                    "id": "jakobschnaitter#07.03.96",
+                    "name": "Jakob Schnaitter",
+                    "country": "Germany",
+                    "dob": "07.03.96",
+                    "currentRanking": 752,
+                    "highestRanking": 686,
+                    "matchesTotal": 182,
+                    "matchesWon": 101,
+                    "url": "",
+                    "type": "atp",
+                    "previousMatches": null,
+                    "parsedPreviousMatches": null
+                },
+                "result": "win"
+            },
+            {
+                "date": "06.04.24",
+                "player": {
+                    "id": "tommasocompagnucci#05.11.99",
+                    "name": "Tommaso Compagnucci",
+                    "country": "Italy",
+                    "dob": "05.11.99",
+                    "currentRanking": 585,
+                    "highestRanking": 531,
+                    "matchesTotal": 173,
+                    "matchesWon": 92,
+                    "url": "",
+                    "type": "atp",
+                    "previousMatches": null,
+                    "parsedPreviousMatches": null
+                },
+                "result": "win"
+            },
+            {
+                "date": "05.04.24",
+                "player": {
+                    "id": "samuelepieri#28.02.02",
+                    "name": "Samuele Pieri",
+                    "country": "Italy",
+                    "dob": "28.02.02",
+                    "currentRanking": 875,
+                    "highestRanking": 874,
+                    "matchesTotal": 131,
+                    "matchesWon": 80,
+                    "url": "",
+                    "type": "atp",
+                    "previousMatches": null,
+                    "parsedPreviousMatches": null
+                },
+                "result": "win"
+            },
+            {
+                "date": "04.04.24",
+                "player": {
+                    "id": "gianmarcoferrari#04.10.00",
+                    "name": "Gianmarco Ferrari",
+                    "country": "Italy",
+                    "dob": "04.10.00",
+                    "currentRanking": 563,
+                    "highestRanking": 387,
+                    "matchesTotal": 246,
+                    "matchesWon": 127,
+                    "url": "",
+                    "type": "atp",
+                    "previousMatches": null,
+                    "parsedPreviousMatches": null
+                },
+                "result": "win"
+            },
+            {
+                "date": "03.04.24",
+                "player": {
+                    "id": "niccolocatini#09.12.97",
+                    "name": "Niccolo Catini",
+                    "country": "Italy",
+                    "dob": "09.12.97",
+                    "currentRanking": 848,
+                    "highestRanking": 837,
+                    "matchesTotal": 148,
+                    "matchesWon": 77,
+                    "url": "",
+                    "type": "atp",
+                    "previousMatches": null,
+                    "parsedPreviousMatches": null
+                },
+                "result": "win"
+            },
+            {
+                "date": "02.04.24",
+                "player": {
+                    "id": "giammarcogandolfi#24.01.04",
+                    "name": "Giammarco Gandolfi",
+                    "country": "Italy",
+                    "dob": "24.01.04",
+                    "currentRanking": 1000,
+                    "highestRanking": 1000,
+                    "matchesTotal": 60,
+                    "matchesWon": 24,
+                    "url": "",
+                    "type": "",
+                    "previousMatches": null,
+                    "parsedPreviousMatches": null
+                },
+                "result": "win"
+            },
+            {
+                "date": "28.03.24",
+                "player": {
+                    "id": "gabrielepennaforti#14.09.00",
+                    "name": "Gabriele Pennaforti",
+                    "country": "Italy",
+                    "dob": "14.09.00",
+                    "currentRanking": 516,
+                    "highestRanking": 516,
+                    "matchesTotal": 171,
+                    "matchesWon": 102,
+                    "url": "",
+                    "type": "atp",
+                    "previousMatches": null,
+                    "parsedPreviousMatches": null
+                },
+                "result": "lost"
+            },
+            {
+                "date": "26.03.24",
+                "player": {
+                    "id": "kyleovermyer#19.02.04",
+                    "name": "Kyle Overmyer",
+                    "country": "USA",
+                    "dob": "19.02.04",
+                    "currentRanking": 1000,
+                    "highestRanking": 1000,
+                    "matchesTotal": 63,
+                    "matchesWon": 17,
+                    "url": "",
+                    "type": "",
+                    "previousMatches": null,
+                    "parsedPreviousMatches": null
+                },
+                "result": "win"
+            },
+            {
+                "date": "23.02.24",
+                "player": {
+                    "id": "jaimefaria#06.08.03",
+                    "name": "Jaime Faria",
+                    "country": "Portugal",
+                    "dob": "06.08.03",
+                    "currentRanking": 257,
+                    "highestRanking": 257,
+                    "matchesTotal": 204,
+                    "matchesWon": 131,
+                    "url": "",
+                    "type": "atp",
+                    "previousMatches": null,
+                    "parsedPreviousMatches": null
+                },
+                "result": "lost"
+            },
+            {
+                "date": "22.02.24",
+                "player": {
+                    "id": "eliakimcoulibaly#05.05.02",
+                    "name": "Eliakim Coulibaly",
+                    "country": "Côte d'Ivoire",
+                    "dob": "05.05.02",
+                    "currentRanking": 499,
+                    "highestRanking": 378,
+                    "matchesTotal": 187,
+                    "matchesWon": 122,
+                    "url": "",
+                    "type": "atp",
+                    "previousMatches": null,
+                    "parsedPreviousMatches": null
+                },
+                "result": "win"
+            },
+            {
+                "date": "21.02.24",
+                "player": {
+                    "id": "alexanderdonski#01.08.98",
+                    "name": "Alexander Donski",
+                    "country": "Canada",
+                    "dob": "01.08.98",
+                    "currentRanking": 875,
+                    "highestRanking": 525,
+                    "matchesTotal": 360,
+                    "matchesWon": 203,
+                    "url": "",
+                    "type": "atp",
+                    "previousMatches": null,
+                    "parsedPreviousMatches": null
+                },
+                "result": "win"
+            },
+            {
+                "date": "16.02.24",
+                "player": {
+                    "id": "sergeyfomin#01.02.01",
+                    "name": "Sergey Fomin",
+                    "country": "Uzbekistan",
+                    "dob": "01.02.01",
+                    "currentRanking": 649,
+                    "highestRanking": 348,
+                    "matchesTotal": 309,
+                    "matchesWon": 144,
+                    "url": "",
+                    "type": "atp",
+                    "previousMatches": null,
+                    "parsedPreviousMatches": null
+                },
+                "result": "lost"
+            },
+            {
+                "date": "14.02.24",
+                "player": {
+                    "id": "johnecheverria#30.11.01",
+                    "name": "John Echeverria",
+                    "country": "Spain",
+                    "dob": "30.11.01",
+                    "currentRanking": 719,
+                    "highestRanking": 557,
+                    "matchesTotal": 226,
+                    "matchesWon": 133,
+                    "url": "",
+                    "type": "atp",
+                    "previousMatches": null,
+                    "parsedPreviousMatches": null
+                },
+                "result": "win"
+            },
+            {
+                "date": "03.02.24",
+                "player": {
+                    "id": "ernestoescobedo#04.07.96",
+                    "name": "Ernesto Escobedo",
+                    "country": "USA",
+                    "dob": "04.07.96",
+                    "currentRanking": 468,
+                    "highestRanking": 67,
+                    "matchesTotal": 553,
+                    "matchesWon": 309,
+                    "url": "",
+                    "type": "atp",
+                    "previousMatches": null,
+                    "parsedPreviousMatches": null
+                },
+                "result": "win"
+            },
+            {
+                "date": "11.01.24",
+                "player": {
+                    "id": "leandroriedi#27.01.02",
+                    "name": "Leandro Riedi",
+                    "country": "Switzerland",
+                    "dob": "27.01.02",
+                    "currentRanking": 166,
+                    "highestRanking": 126,
+                    "matchesTotal": 199,
+                    "matchesWon": 122,
+                    "url": "",
+                    "type": "atp",
+                    "previousMatches": null,
+                    "parsedPreviousMatches": null
+                },
+                "result": "lost"
+            },
+            {
+                "date": "10.01.24",
+                "player": {
+                    "id": "enricodallavalle#21.03.98",
+                    "name": "Enrico Dalla Valle",
+                    "country": "Italy",
+                    "dob": "21.03.98",
+                    "currentRanking": 263,
+                    "highestRanking": 254,
+                    "matchesTotal": 399,
+                    "matchesWon": 215,
+                    "url": "",
+                    "type": "atp",
+                    "previousMatches": null,
+                    "parsedPreviousMatches": null
+                },
+                "result": "win"
+            },
+            {
+                "date": "09.01.24",
+                "player": {
+                    "id": "nicolasalvarezvarona#18.05.01",
+                    "name": "Nicolas Alvarez Varona",
+                    "country": "Spain",
+                    "dob": "18.05.01",
+                    "currentRanking": 715,
+                    "highestRanking": 219,
+                    "matchesTotal": 315,
+                    "matchesWon": 175,
+                    "url": "",
+                    "type": "atp",
+                    "previousMatches": null,
+                    "parsedPreviousMatches": null
+                },
+                "result": "win"
+            },
+            {
+                "date": "08.01.24",
+                "player": {
+                    "id": "mathyserhard#26.10.01",
+                    "name": "Mathys Erhard",
+                    "country": "France",
+                    "dob": "26.10.01",
+                    "currentRanking": 330,
+                    "highestRanking": 310,
+                    "matchesTotal": 300,
+                    "matchesWon": 178,
+                    "url": "",
+                    "type": "atp",
+                    "previousMatches": null,
+                    "parsedPreviousMatches": null
+                },
+                "result": "win"
+            },
+            {
+                "date": "07.01.24",
+                "player": {
+                    "id": "tobyalexkodat#13.01.03",
+                    "name": "Toby Alex Kodat",
+                    "country": "USA",
+                    "dob": "13.01.03",
+                    "currentRanking": 352,
+                    "highestRanking": 311,
+                    "matchesTotal": 223,
+                    "matchesWon": 120,
+                    "url": "",
+                    "type": "atp",
+                    "previousMatches": null,
+                    "parsedPreviousMatches": null
+                },
+                "result": "win"
+            },
+            {
+                "date": "02.01.24",
+                "player": {
+                    "id": "nikolozbasilashvili#23.02.92",
+                    "name": "Nikoloz Basilashvili",
+                    "country": "Georgia",
+                    "dob": "23.02.92",
+                    "currentRanking": 544,
+                    "highestRanking": 16,
+                    "matchesTotal": 844,
+                    "matchesWon": 441,
+                    "url": "",
+                    "type": "atp",
+                    "previousMatches": null,
+                    "parsedPreviousMatches": null
+                },
+                "result": "lost"
+            }
+        ]
+    },
+    "player2": {
+        "id": "danadded#13.04.99",
+        "name": "Dan Added",
+        "country": "France",
+        "dob": "13.04.99",
+        "currentRanking": 403,
+        "highestRanking": 240,
+        "matchesTotal": 476,
+        "matchesWon": 270,
+        "url": "",
+        "type": "atp",
+        "previousMatches": null,
+        "parsedPreviousMatches": [
+            {
+                "date": "07.04.24",
+                "player": {
+                    "id": "neiloberleitner#05.08.99",
+                    "name": "Neil Oberleitner",
+                    "country": "Austria",
+                    "dob": "05.08.99",
+                    "currentRanking": 632,
+                    "highestRanking": 497,
+                    "matchesTotal": 345,
+                    "matchesWon": 169,
+                    "url": "",
+                    "type": "atp",
+                    "previousMatches": null,
+                    "parsedPreviousMatches": null
+                },
+                "result": "win"
+            },
+            {
+                "date": "21.03.24",
+                "player": {
+                    "id": "rafaelizquierdoluque#10.01.00",
+                    "name": "Rafael Izquierdo Luque",
+                    "country": "Spain",
+                    "dob": "10.01.00",
+                    "currentRanking": 1000,
+                    "highestRanking": 1000,
+                    "matchesTotal": 77,
+                    "matchesWon": 43,
+                    "url": "",
+                    "type": "",
+                    "previousMatches": null,
+                    "parsedPreviousMatches": null
+                },
+                "result": "lost"
+            },
+            {
+                "date": "20.03.24",
+                "player": {
+                    "id": "yusuketakahashi#17.10.97",
+                    "name": "Yusuke Takahashi",
+                    "country": "Japan",
+                    "dob": "17.10.97",
+                    "currentRanking": 454,
+                    "highestRanking": 238,
+                    "matchesTotal": 474,
+                    "matchesWon": 261,
+                    "url": "",
+                    "type": "atp",
+                    "previousMatches": null,
+                    "parsedPreviousMatches": null
+                },
+                "result": "win"
+            },
+            {
+                "date": "12.03.24",
+                "player": {
+                    "id": "imanollopezmorillo#18.11.99",
+                    "name": "Imanol Lopez Morillo",
+                    "country": "Spain",
+                    "dob": "18.11.99",
+                    "currentRanking": 480,
+                    "highestRanking": 470,
+                    "matchesTotal": 353,
+                    "matchesWon": 211,
+                    "url": "",
+                    "type": "atp",
+                    "previousMatches": null,
+                    "parsedPreviousMatches": null
+                },
+                "result": "lost"
+            },
+            {
+                "date": "26.02.24",
+                "player": {
+                    "id": "siddharthvishwakarma#07.10.94",
+                    "name": "Siddharth Vishwakarma",
+                    "country": "India",
+                    "dob": "07.10.94",
+                    "currentRanking": 662,
+                    "highestRanking": 659,
+                    "matchesTotal": 225,
+                    "matchesWon": 140,
+                    "url": "",
+                    "type": "atp",
+                    "previousMatches": null,
+                    "parsedPreviousMatches": null
+                },
+                "result": "lost"
+            },
+            {
+                "date": "25.02.24",
+                "player": {
+                    "id": "nikikaliyandapoonacha#27.04.95",
+                    "name": "Niki Kaliyanda Poonacha",
+                    "country": "India",
+                    "dob": "27.04.95",
+                    "currentRanking": 724,
+                    "highestRanking": 607,
+                    "matchesTotal": 323,
+                    "matchesWon": 157,
+                    "url": "",
+                    "type": "atp",
+                    "previousMatches": null,
+                    "parsedPreviousMatches": null
+                },
+                "result": "win"
+            },
+            {
+                "date": "18.02.24",
+                "player": {
+                    "id": "kaichiuchida#23.08.94",
+                    "name": "Kaichi Uchida",
+                    "country": "Japan",
+                    "dob": "23.08.94",
+                    "currentRanking": 527,
+                    "highestRanking": 147,
+                    "matchesTotal": 736,
+                    "matchesWon": 373,
+                    "url": "",
+                    "type": "atp",
+                    "previousMatches": null,
+                    "parsedPreviousMatches": null
+                },
+                "result": "lost"
+            },
+            {
+                "date": "13.02.24",
+                "player": {
+                    "id": "lucanardi#06.08.03",
+                    "name": "Luca Nardi",
+                    "country": "Italy",
+                    "dob": "06.08.03",
+                    "currentRanking": 76,
+                    "highestRanking": 75,
+                    "matchesTotal": 251,
+                    "matchesWon": 145,
+                    "url": "",
+                    "type": "atp",
+                    "previousMatches": null,
+                    "parsedPreviousMatches": null
+                },
+                "result": "lost"
+            },
+            {
+                "date": "12.02.24",
+                "player": {
+                    "id": "raphaelcollignon#13.01.02",
+                    "name": "Raphael Collignon",
+                    "country": "Belgium",
+                    "dob": "13.01.02",
+                    "currentRanking": 417,
+                    "highestRanking": 210,
+                    "matchesTotal": 192,
+                    "matchesWon": 119,
+                    "url": "",
+                    "type": "atp",
+                    "previousMatches": null,
+                    "parsedPreviousMatches": null
+                },
+                "result": "lost"
+            },
+            {
+                "date": "11.02.24",
+                "player": {
+                    "id": "karansingh#30.06.03",
+                    "name": "Karan Singh",
+                    "country": "India",
+                    "dob": "30.06.03",
+                    "currentRanking": 685,
+                    "highestRanking": 670,
+                    "matchesTotal": 143,
+                    "matchesWon": 74,
+                    "url": "",
+                    "type": "atp",
+                    "previousMatches": null,
+                    "parsedPreviousMatches": null
+                },
+                "result": "win"
+            },
+            {
+                "date": "07.02.24",
+                "player": {
+                    "id": "stefanonapolitano#11.04.95",
+                    "name": "Stefano Napolitano",
+                    "country": "Italy",
+                    "dob": "11.04.95",
+                    "currentRanking": 158,
+                    "highestRanking": 152,
+                    "matchesTotal": 617,
+                    "matchesWon": 332,
+                    "url": "",
+                    "type": "atp",
+                    "previousMatches": null,
+                    "parsedPreviousMatches": null
+                },
+                "result": "lost"
+            },
+            {
+                "date": "05.02.24",
+                "player": {
+                    "id": "akirasantillan#22.05.97",
+                    "name": "Akira Santillan",
+                    "country": "Australia",
+                    "dob": "22.05.97",
+                    "currentRanking": 437,
+                    "highestRanking": 144,
+                    "matchesTotal": 524,
+                    "matchesWon": 292,
+                    "url": "",
+                    "type": "atp",
+                    "previousMatches": null,
+                    "parsedPreviousMatches": null
+                },
+                "result": "win"
+            },
+            {
+                "date": "24.01.24",
+                "player": {
+                    "id": "dimitarkuzmanov#28.07.93",
+                    "name": "Dimitar Kuzmanov",
+                    "country": "Bulgaria",
+                    "dob": "28.07.93",
+                    "currentRanking": 250,
+                    "highestRanking": 158,
+                    "matchesTotal": 811,
+                    "matchesWon": 514,
+                    "url": "",
+                    "type": "atp",
+                    "previousMatches": null,
+                    "parsedPreviousMatches": null
+                },
+                "result": "lost"
+            },
+            {
+                "date": "23.01.24",
+                "player": {
+                    "id": "alexandreaubriot#06.06.99",
+                    "name": "Alexandre Aubriot",
+                    "country": "France",
+                    "dob": "06.06.99",
+                    "currentRanking": 748,
+                    "highestRanking": 688,
+                    "matchesTotal": 191,
+                    "matchesWon": 95,
+                    "url": "",
+                    "type": "atp",
+                    "previousMatches": null,
+                    "parsedPreviousMatches": null
+                },
+                "result": "win"
+            },
+            {
+                "date": "22.01.24",
+                "player": {
+                    "id": "theoarribage#09.10.00",
+                    "name": "Theo Arribage",
+                    "country": "France",
+                    "dob": "09.10.00",
+                    "currentRanking": 1000,
+                    "highestRanking": 1000,
+                    "matchesTotal": 124,
+                    "matchesWon": 50,
+                    "url": "",
+                    "type": "",
+                    "previousMatches": null,
+                    "parsedPreviousMatches": null
+                },
+                "result": "win"
+            },
+            {
+                "date": "19.01.24",
+                "player": {
+                    "id": "jonasforejtek#10.03.01",
+                    "name": "Jonas Forejtek",
+                    "country": "Czech Republic",
+                    "dob": "10.03.01",
+                    "currentRanking": 375,
+                    "highestRanking": 217,
+                    "matchesTotal": 313,
+                    "matchesWon": 187,
+                    "url": "",
+                    "type": "atp",
+                    "previousMatches": null,
+                    "parsedPreviousMatches": null
+                },
+                "result": "lost"
+            },
+            {
+                "date": "18.01.24",
+                "player": {
+                    "id": "nikolozbasilashvili#23.02.92",
+                    "name": "Nikoloz Basilashvili",
+                    "country": "Georgia",
+                    "dob": "23.02.92",
+                    "currentRanking": 544,
+                    "highestRanking": 16,
+                    "matchesTotal": 844,
+                    "matchesWon": 441,
+                    "url": "",
+                    "type": "atp",
+                    "previousMatches": null,
+                    "parsedPreviousMatches": null
+                },
+                "result": "win"
+            },
+            {
+                "date": "17.01.24",
+                "player": {
+                    "id": "faustotabacco#13.05.02",
+                    "name": "Fausto Tabacco",
+                    "country": "Italy",
+                    "dob": "13.05.02",
+                    "currentRanking": 613,
+                    "highestRanking": 433,
+                    "matchesTotal": 213,
+                    "matchesWon": 127,
+                    "url": "",
+                    "type": "atp",
+                    "previousMatches": null,
+                    "parsedPreviousMatches": null
+                },
+                "result": "win"
+            },
+            {
+                "date": "09.01.24",
+                "player": {
+                    "id": "enricodallavalle#21.03.98",
+                    "name": "Enrico Dalla Valle",
+                    "country": "Italy",
+                    "dob": "21.03.98",
+                    "currentRanking": 263,
+                    "highestRanking": 254,
+                    "matchesTotal": 399,
+                    "matchesWon": 215,
+                    "url": "",
+                    "type": "atp",
+                    "previousMatches": null,
+                    "parsedPreviousMatches": null
+                },
+                "result": "lost"
+            },
+            {
+                "date": "08.01.24",
+                "player": {
+                    "id": "samuelvincentruggeri#22.05.02",
+                    "name": "Samuel Vincent Ruggeri",
+                    "country": "Italy",
+                    "dob": "22.05.02",
+                    "currentRanking": 273,
+                    "highestRanking": 268,
+                    "matchesTotal": 268,
+                    "matchesWon": 168,
+                    "url": "",
+                    "type": "atp",
+                    "previousMatches": null,
+                    "parsedPreviousMatches": null
+                },
+                "result": "lost"
+            }
+        ]
+    }
+}

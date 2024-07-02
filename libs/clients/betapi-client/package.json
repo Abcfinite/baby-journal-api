@@ -1,0 +1,25 @@
+{
+  "name": "@abcfinite/betapi-client",
+  "version": "0.0.1",
+  "author": "abraham cole finite <abrahamfinite@gmail.com>",
+  "main": "./index.ts",
+  "dependencies": {
+    "@abcfinite/dynamodb-client": "0.0.4"
+  },
+  "scripts": {
+    "build": "tsc"
+  },
+  "description": "todo - query - create - update - remove",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Abcfinite/baby-journal-api.git"
+  },
+  "keywords": [
+    "dynamodb"
+  ],
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Abcfinite/baby-journal-api/issues"
+  },
+  "homepage": "https://github.com/Abcfinite/baby-journal-api#readme"
+}

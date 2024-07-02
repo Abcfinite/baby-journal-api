@@ -6,6 +6,7 @@ import { SportEvent } from "@/types/sportEvent";
 import MatchesDetailParser from "./src/parsers/matchesDetailParser";
 import PlayerService from "./src/services/playerService";
 import ScheduleService from "./src/services/scheduleService";
+import FinishedService from './src/services/finishedService';
 
 export default class TennisliveClient {
 
@@ -57,5 +58,15 @@ export default class TennisliveClient {
   async getSchedule() : Promise<SportEvent[]> {
     const result = await new ScheduleService().getSchedule()
     return result
+  }
+
+  async getFinished() : Promise<SportEvent[]> {
+    const finishedSportEvents = await new FinishedService().getFinished()
+
+    finishedSportEvents.forEach(se => {
+      se.url
+    })
+
+    return finishedSportEvents
   }
 }

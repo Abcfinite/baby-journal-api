@@ -24,12 +24,16 @@ export default class MatchAdapter {
     const player1 = _.get(playerDetail, 'player1', {}) as Player
     const player2 = _.get(playerDetail, 'player2', {}) as Player
 
+    // const wlScore = this.winLoseScore(player1, player2)
+    const winLoseRanking = {
+      player1: player1WL,
+      player2: player2WL,
+    }
+
     const analysisResult = {
-      winLoseRanking: {
-        player1: player1WL,
-        player2: player2WL,
-      },
-      similarOpponent: this.similarOpponent(player1, player2),
+      winLoseRanking: winLoseRanking,
+      // winLoseScore: wlScore,
+      // knn: await new Analysis().knn(player1, player2, wlScore, winLoseRanking),
       highLowRanking: this.highLowRanking(player1, player2),
       betAgainstOdd: {
         nonFavPlayerWonToHigherLevelThanFav: this.nonFavPlayerWonToHigherLevelThanFav(playerDetail)
@@ -62,40 +66,6 @@ export default class MatchAdapter {
     return analysisResult
   }
 
-  similarOpponent(player1: Player, player2: Player) {
-    var player1AvgRanking = this.avgRanking(player1.currentRanking, player1.highestRanking)
-    var player2AvgRanking = this.avgRanking(player2.currentRanking, player2.highestRanking)
-    var p1prevMatches = []
-    var p2prevMatches = []
-
-    player1.parsedPreviousMatches.forEach(pm => {
-      pm['avg_ranking_gap'] = Math.abs(player2AvgRanking - this.avgRanking(pm.player.currentRanking, pm.player.highestRanking))
-      p1prevMatches.push(pm)
-    })
-
-    player2.parsedPreviousMatches.forEach(pm => {
-      pm['avg_ranking_gap'] = Math.abs(player1AvgRanking - this.avgRanking(pm.player.currentRanking, pm.player.highestRanking))
-      p2prevMatches.push(pm)
-    })
-
-    const p1Sorted = p1prevMatches.sort((a, b) => {
-      return a['avg_ranking_gap'] - b['avg_ranking_gap']
-    })
-
-    const p2Sorted = p2prevMatches.sort((a, b) => {
-      return a['avg_ranking_gap'] - b['avg_ranking_gap']
-    })
-
-    return {
-      player1: p1Sorted[0],
-      player2: p2Sorted[0]
-    }
-  }
-
-  avgRanking(currentRanking: number, highestRanking: number) {
-    return currentRanking + ((currentRanking + highestRanking)/2)
-  }
-
   // to test : /checkPlayer?player1=Genaro Alberto Olivieri&player2=Francesco Passaro
   playedBefore(player1: Player, player2: Player) {
     let findDuplicates = arr => arr.filter((item, index) => arr.indexOf(item) !== index)
@@ -114,6 +84,54 @@ export default class MatchAdapter {
       player1: p1LostToLowerRanking.includes(0) || p1LostToLowerRanking.includes(1),
       player2: p2LostToLowerRanking.includes(0) || p2LostToLowerRanking.includes(1)
     }
+  }
+
+  // score for last 10 matches
+  // win
+  // * from higher avg ranking = +diff
+  // * from lower avg ranking = 0
+  // lost
+  // * from higher avg ranking = 0
+  // * from lower avg ranking => -diff
+  // multiply by how current. Most current 20
+  winLoseScore(player1: Player, player2: Player) {
+    return {
+      'player-1': this.wlScore(player1),
+      'player-2': this.wlScore(player2),
+    }
+  }
+
+  wlScore(player: Player) {
+    const playerAvgRanking = Analysis.avgRanking(player.currentRanking, player.highestRanking)
+    var pScore = 0
+    player.parsedPreviousMatches.slice(0,9).forEach((pm, index) => {
+      const pmAvgRangking = Analysis.avgRanking(pm.player.currentRanking, pm.player.highestRanking)
+      if (pm.result === 'win') {
+        // // 650 v 350
+        if (playerAvgRanking > pmAvgRangking) {
+          // pScore = pScore + ((playerAvgRanking - pmAvgRangking) * (10 - index))
+          pScore = pScore + 100
+        }
+        //  else if (playerAvgRanking === pmAvgRangking) {
+        //   pScore = pScore + (10 - index)
+        // }
+        // console.log('>>>>win>>>', pScore)
+        pScore = pScore + 100
+      } else if (pm.result === 'lost') {
+        // // 650 v 1000
+        if (playerAvgRanking < pmAvgRangking) {
+          // pScore = pScore - ((pmAvgRangking - playerAvgRanking) * (10 - index))
+          pScore = pScore - 100
+        }
+        // else if (playerAvgRanking === pmAvgRangking) {
+        //   pScore = pScore - (10 - index)
+        // }
+        // console.log('>>>>lost>>>', pScore)
+        pScore = pScore - 100
+      }
+    })
+
+    return pScore
   }
 
   highLowRanking(player1: Player, player2: Player) {
@@ -161,8 +179,17 @@ export default class MatchAdapter {
     const p1names = player1.parsedPreviousMatches.map(p => p.player.name)
     const p2names = player2.parsedPreviousMatches.map(p => p.player.name)
     let intersection = p1names.filter(x => p2names.includes(x));
+    let uIntersection = Array.from(new Set(intersection))
 
-    return intersection
+    const p1Win = _.get(player1, 'parsedPreviousMatches', []).filter(pm => uIntersection.includes(pm.player.name) && pm.result === 'win')
+    const p2Win = _.get(player2, 'parsedPreviousMatches', []).filter(pm => uIntersection.includes(pm.player.name) && pm.result === 'win')
+
+    return {
+      names: intersection,
+      player1Score: p1Win.length ,
+      player2Score: p2Win.length,
+      total: uIntersection.length
+    }
   }
 
   async analyzeAge(isATP: boolean = true) {

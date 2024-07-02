@@ -1,0 +1,26 @@
+{
+  "name": "@abcfinite/matchstat-client",
+  "version": "0.0.4",
+  "author": "abraham cole finite <abrahamfinite@gmail.com>",
+  "main": "./index.ts",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.462.0",
+    "@aws-sdk/lib-dynamodb": "^3.462.0"
+  },
+  "scripts": {
+    "build": "tsc"
+  },
+  "description": "todo - query - create - update - remove",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Abcfinite/baby-journal-api.git"
+  },
+  "keywords": [
+    "dynamodb"
+  ],
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Abcfinite/baby-journal-api/issues"
+  },
+  "homepage": "https://github.com/Abcfinite/baby-journal-api#readme"
+}

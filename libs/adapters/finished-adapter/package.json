@@ -1,12 +1,15 @@
 {
-  "name": "events-sports",
-  "version": "1.0.0",
+  "name": "@abcfinite/finished-adapter",
+  "version": "0.0.1",
   "author": "abraham cole finite <abrahamfinite@gmail.com>",
+  "main": "index.ts",
   "dependencies": {
-    "@abcfinite/player-adapter": "0.0.1",
-    "@abcfinite/schedule-adapter": "0.0.1",
-    "@abcfinite/finished-adapter": "0.0.1",
-    "lodash.get": "^4.4.2"
+      "@abcfinite/s3-client-custom": "0.0.1",
+      "@abcfinite/tennislive-client": "0.0.1",
+      "@abcfinite/player-adapter": "0.0.1",
+      "@aws-sdk/client-sqs": "^3.540.0",
+      "fast-csv": "^5.0.1",
+      "lodash.get": "^4.4.2"
   },
   "jest": {
     "verbose": true,
@@ -38,5 +41,8 @@
       "test",
       "src"
     ]
+  },
+  "scripts": {
+    "build": "tsc"
   }
 }

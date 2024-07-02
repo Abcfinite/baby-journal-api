@@ -60,3 +60,17 @@ functions:
       - http:
           path: /schedule
           method: get
+  finished:
+    handler: index.getFinished
+    timeout: 900
+    events:
+      - http:
+          path: /finished
+          method: get
+  valueSummary:
+    handler: index.getValueSummary
+    timeout: 900
+    events:
+      - http:
+          path: /value-summary
+          method: get
