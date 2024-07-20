@@ -4,7 +4,7 @@ import EventParser from "./event-parser";
 export default class EventsParser {
     constructor() {}
 
-    parse = (results : Array<HttpResponse>) => {
+    parse = (results : Array<Array<object>>) => {
         const cols = results.map(r =>  new EventParser().parse(r))
         return cols.flat()
     }

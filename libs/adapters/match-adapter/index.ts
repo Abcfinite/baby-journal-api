@@ -196,7 +196,7 @@ export default class MatchAdapter {
     const winningAge = {}
     const losingAge = {}
     const matchType = isATP ? 'atp' : 'wta'
-    const dataFileList = await  new S3ClientCustom().getFileList('tennis-match-data')
+    const dataFileList = await new S3ClientCustom().getFileList('tennis-match-data')
 
     await Promise.all(
       dataFileList.map(async data => {

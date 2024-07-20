@@ -1,12 +1,10 @@
 import { HttpResponse } from "@abcfinite/http-api-client/src/types/http-response";
-import { Event } from '../types/event'
-import { Player } from '../types/player';
 
 export default class EventParser {
     constructor() {}
 
-    parse = (result: HttpResponse) => {
-        return result.value['data'].map(e => {
+    parse = (result: Array<object>) => {
+        return result.map(e => {
             const p1 = {
                 id: e['player1']['id'],
                 name: e['player1']['name'],
