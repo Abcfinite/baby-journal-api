@@ -41,17 +41,17 @@ export default class BetapiClient {
 
     fullIncomingEvents = fullIncomingEvents.concat(pageOneEvents)
 
-    let fetchPageActions = []
-    for (let page=0; page < numberOfPageTurn; page++) {
-      // fetchPageActions.push(this.getEveryPage(page))
-      fullIncomingEvents = fullIncomingEvents.concat(await this.getEveryPage(page))
-    }
+    // let fetchPageActions = []
+    // for (let page=0; page < numberOfPageTurn; page++) {
+    //   // fetchPageActions.push(this.getEveryPage(page))
+    //   fullIncomingEvents = fullIncomingEvents.concat(await this.getEveryPage(page))
+    // }
 
-    let parsedEvents: Array<Array<Event>> = await Promise.all(fetchPageActions)
+    // let parsedEvents: Array<Array<Event>> = await Promise.all(fetchPageActions)
 
-    parsedEvents.map(pe => fullIncomingEvents = fullIncomingEvents.concat(pe))
+    // parsedEvents.map(pe => fullIncomingEvents = fullIncomingEvents.concat(pe))
 
-    await new CacheService().setEventCache(JSON.stringify(fullIncomingEvents))
+    // await new CacheService().setEventCache(JSON.stringify(fullIncomingEvents))
 
     return fullIncomingEvents
   }
