@@ -6,7 +6,7 @@ NODE_MODULES_DIR=../../../node_modules
 ################
 
 _lint:
-	$(NODE_MODULES_DIR)/eslint/bin/eslint.js lib test --ext ts --ext js
+	$(NODE_MODULES_DIR)/eslint/bin/eslint.js
 
 _tsc:
 	$(NODE_MODULES_DIR)/typescript/bin/tsc --noEmit true
@@ -21,7 +21,7 @@ _testUnitWithCoverage:
 	$(NODE_MODULES_DIR)/jest/bin/jest.js test/unit --runInBand --passWithNoTests  --coverage
 
 _lintFix:
-	$(NODE_MODULES_DIR)/eslint/bin/eslint.js lib test --ext ts --ext js --_lintFix
+	$(NODE_MODULES_DIR)/eslint/bin/eslint.js --fix
 
 _testIntegration:
 	$(NODE_MODULES_DIR)/jest/bin/jest.js test/integration --runInBand --passWithNoTests

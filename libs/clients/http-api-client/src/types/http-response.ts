@@ -22,15 +22,15 @@ export interface HttpResponse {
 }
 
 export type Value =
-  /// The value returned in the body
   | string
   | undefined
   | null
   | number
-  | Array<Value>
+  | Value[]
   | {
-      [key in string | number]: string | number | object | boolean | null | undefined | Array<Value>
-    }
+    // eslint-disable-next-line no-unused-vars
+    [key in string | number]: string | number | object | boolean | null | undefined | Value[]
+  }
 
 export const httpResponseSchema = ObjectParser({
   status: NumberParser({ nullable: true }),
