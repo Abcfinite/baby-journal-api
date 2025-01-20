@@ -201,7 +201,6 @@ export default class ScheduleAdapter {
     return data.map(p => [p.fp, p.result, p.prediction, p.probability]).join('\r\n')
   }
 
-
   async getPredictionsTT() {
     const waitingQuery = {
       TableName: 'table_tennis_h2h_bm',
@@ -233,6 +232,9 @@ export default class ScheduleAdapter {
       const p1Won = h2hBmQueryResult['Items'].filter(item => item.winner.S === '1').length
       const p2Won = h2hBmQueryResult['Items'].filter(item => item.winner.S === '2').length
 
+      const hasCleanSheet = h2hBmQueryResult['Items']
+        .filter(item => (item.winner.S === '1' && item.setScore.S === '3-0') || (item.winner.S === '2' && item.setScore.S === '0-3'))
+
       const p1prediction = p1Won + p2Won > 0 ? (p1Won / (p1Won + p2Won)).toFixed(2) : '0'
       const p2prediction = p1Won + p2Won > 0 ? (p2Won / (p1Won + p2Won)).toFixed(2) : '0'
 
@@ -245,16 +247,18 @@ export default class ScheduleAdapter {
         Key: {
           'id': { S: item.id.S },
         },
-        UpdateExpression: 'SET #p1prediction = :p1prediction, #p2prediction = :p2prediction, #predMatchNo = :predMatchNo',
+        UpdateExpression: 'SET #p1prediction = :p1prediction, #p2prediction = :p2prediction, #predMatchNo = :predMatchNo, #hasCleanSheetSet = :hasCleanSheetSet',
         ExpressionAttributeNames: {
           '#p1prediction': 'p1prediction',
           '#p2prediction': 'p2prediction',
           '#predMatchNo': 'predMatchNo',
+          '#hasCleanSheet': 'hasCleanSheet',
         },
         ExpressionAttributeValues: {
           ':p1prediction': { S: `${p1prediction}` },
           ':p2prediction': { S: `${p2prediction}` },
           ':predMatchNo': { S: `${p1Won + p2Won}` },
+          ':hasCleanSheet': { S: `${hasCleanSheet}` },
         },
       }
 
@@ -284,7 +288,6 @@ export default class ScheduleAdapter {
 
     //toCSV
     const forCsv = waitingQueryResultAfterPrediction['Items'].map(item => {
-
       return {
         date: item.date.S,
         time: item.time.S,
@@ -294,10 +297,9 @@ export default class ScheduleAdapter {
         p1prediction: item.p1prediction.S,
         p2prediction: item.p2prediction.S,
         predMatchNo: item.predMatchNo.S,
+        hasCleanSheet: item.hasCleanSheet.S,
       }
     })
-
-
 
     return toTTPredCsv(forCsv)
   }
