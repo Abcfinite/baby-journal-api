@@ -22,9 +22,9 @@ import { put } from "@abcfinite/dynamodb-client/src/items"
 
 export default class ScheduleAdapter {
 
-  currentCheckDate = '20/01/2025'
-  matchNoTennis = 170
-  matchNoEsports = 40
+  currentCheckDate = '30/01/2025'
+  matchNoTennis = 140
+  matchNoEsports = 53
 
   async removeAllCache() {
     const s3ClientCustom = new S3ClientCustom()
@@ -232,11 +232,13 @@ export default class ScheduleAdapter {
       const p1Won = h2hBmQueryResult['Items'].filter(item => item.winner.S === '1').length
       const p2Won = h2hBmQueryResult['Items'].filter(item => item.winner.S === '2').length
 
-      const hasCleanSheet = h2hBmQueryResult['Items']
-        .filter(item => (item.winner.S === '1' && item.setScore.S === '3-0') || (item.winner.S === '2' && item.setScore.S === '0-3'))
 
       const p1prediction = p1Won + p2Won > 0 ? (p1Won / (p1Won + p2Won)).toFixed(2) : '0'
       const p2prediction = p1Won + p2Won > 0 ? (p2Won / (p1Won + p2Won)).toFixed(2) : '0'
+
+      const hasCleanSheet = p1prediction === p2prediction ? [] : h2hBmQueryResult['Items']
+        .filter(item => (p1prediction > p2prediction && item.winner.S === '1' && item.setScore.S === '3-0') ||
+          (p1prediction < p2prediction && item.winner.S === '2' && item.setScore.S === '0-3'))
 
       // console.log('>>>id : ', item.id)
       // console.log('>>>p2prediction : ', p1prediction)
@@ -247,7 +249,7 @@ export default class ScheduleAdapter {
         Key: {
           'id': { S: item.id.S },
         },
-        UpdateExpression: 'SET #p1prediction = :p1prediction, #p2prediction = :p2prediction, #predMatchNo = :predMatchNo, #hasCleanSheetSet = :hasCleanSheetSet',
+        UpdateExpression: 'SET #p1prediction = :p1prediction, #p2prediction = :p2prediction, #predMatchNo = :predMatchNo, #hasCleanSheet = :hasCleanSheet',
         ExpressionAttributeNames: {
           '#p1prediction': 'p1prediction',
           '#p2prediction': 'p2prediction',
@@ -258,7 +260,7 @@ export default class ScheduleAdapter {
           ':p1prediction': { S: `${p1prediction}` },
           ':p2prediction': { S: `${p2prediction}` },
           ':predMatchNo': { S: `${p1Won + p2Won}` },
-          ':hasCleanSheet': { S: `${hasCleanSheet}` },
+          ':hasCleanSheet': { S: `${hasCleanSheet.length}` },
         },
       }
 
@@ -1348,22 +1350,12 @@ export default class ScheduleAdapter {
 
     console.log('>>>>>ttEvents: ', ttEvents)
 
-    const ttEventCollection = [];
     for (const ttEvent of ttEvents) {
       const result = await new PlayerAdapter().getResult(ttEvent);
-      if (result !== null) {
-        ttEventCollection.push(result);
+      if (result === null) {
+        continue
       }
-      await delay(100); // Wait for 1 second
-    }
 
-    console.log('>>>>>ttEventCollection : ', ttEventCollection.length)
-
-    const ttEventCollectionResult = await Promise.all(ttEventCollection)
-
-    console.log('>>>>prepare update dynamodb : ', ttEventCollectionResult.length)
-
-    const updateItemCollections = ttEventCollectionResult.map(async ttEvent => {
       const item = {
         TableName: 'table_tennis_h2h_bm',
         Key: {
@@ -1375,16 +1367,13 @@ export default class ScheduleAdapter {
           '#setScore': 'setScore',
         },
         ExpressionAttributeValues: {
-          ':winner': { S: `${ttEvent.winner}` },
-          ':setScore': { S: `${ttEvent.setScore}` },
+          ':winner': { S: `${result.winner}` },
+          ':setScore': { S: `${result.setScore}` },
         },
       }
 
-      return await updateItem(item)
-    })
-
-    await Promise.all(updateItemCollections)
-
+      await updateItem(item)
+    }
 
     // remove the still waiting
 
@@ -1399,5 +1388,6 @@ export default class ScheduleAdapter {
     // await Promise.all(deleteEvents)
 
     return 'test'
+
   }
 }

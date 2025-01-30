@@ -62,6 +62,9 @@ export default class PlayerAdapter {
     const player1Name = player1Matches.find(p => p.player1.id === player1Id).player1.name
     const player2Name = player2Matches.find(p => p.player1.id === player2Id).player1.name
 
+    const p1L10 = player1Matches.slice(0, 10).filter(p1m => p1m.player1.id === player1Id ? p1m.player1won : !p1m.player1won).length
+    const p2L10 = player2Matches.slice(0, 10).filter(p2m => p2m.player1.id === player2Id ? p2m.player1won : !p2m.player1won).length
+
     const h2hAll = player1Matches.filter(p1m => p1m.player1.id === player2Id || p1m.player2.id === player2Id)
 
     let h2hP1Won = 0
@@ -145,6 +148,8 @@ export default class PlayerAdapter {
       "bmP2": p2BMF,
       "h2hBm": `${h2hP1Won}#${h2hP2}#${p1BMF}#${p2BMF}`,
       "h2hBmLastWinner": `${h2hP1Won}#${h2hP2}#${h2hLastWinner}#${p1BMF}#${p2BMF}`,
+      p1L10,
+      p2L10,
       "setScore": 'waiting',
       "winner": 'waiting'
     }
