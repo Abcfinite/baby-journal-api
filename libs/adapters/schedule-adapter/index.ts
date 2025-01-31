@@ -22,8 +22,8 @@ import { put } from "@abcfinite/dynamodb-client/src/items"
 
 export default class ScheduleAdapter {
 
-  currentCheckDate = '30/01/2025'
-  matchNoTennis = 140
+  currentCheckDate = '31/01/2025'
+  matchNoTennis = 122
   matchNoEsports = 53
 
   async removeAllCache() {

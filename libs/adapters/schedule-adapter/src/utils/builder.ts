@@ -197,10 +197,10 @@ export const toTTCsv = (jsonString: string): string => {
 
     'p1 name',
     'p2 name',
-    'p1 L10',
-    'p2 L10',
     'p1 h2h',
     'p2 h2h',
+    'p1 L10',
+    'p2 L10',
 
     'h2h last winner',
     'p1 BM',
