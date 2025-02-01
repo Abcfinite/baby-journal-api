@@ -4,6 +4,7 @@ import { Readable } from 'stream'
 
 import { Client } from 'pg'
 import { toQuery, formatResult, prediction, probability } from './src/utils/helper'
+import { insertMatchRecords } from './src/utils/database'
 
 import S3ClientCustom from '@abcfinite/s3-client-custom'
 import { putItem, executeScan, executeQuery, executeQueryIndex, updateItem, removeItem } from '@abcfinite/dynamodb-client'
@@ -22,9 +23,9 @@ import { put } from "@abcfinite/dynamodb-client/src/items"
 
 export default class ScheduleAdapter {
 
-  currentCheckDate = '31/01/2025'
-  matchNoTennis = 122
-  matchNoEsports = 53
+  currentCheckDate = '01/02/2025'
+  matchNoTennis = 143
+  matchNoEsports = 35
 
   async removeAllCache() {
     const s3ClientCustom = new S3ClientCustom()
@@ -60,57 +61,57 @@ export default class ScheduleAdapter {
 
     const events = await new BetapiClient().getEvents('13')
 
-    // safe all main players in dynamodb
-    if (events.length === 0) { return 'no match scheduled' }
+    // // safe all main players in dynamodb
+    // if (events.length === 0) { return 'no match scheduled' }
 
-    // filter out double
-    const filteredEvents = events.map(event => {
-      if (!event.player1.name.includes('/')) {
-        return event
-      }
-    }).filter(Boolean)
+    // // filter out double
+    // const filteredEvents = events.map(event => {
+    //   if (!event.player1.name.includes('/')) {
+    //     return event
+    //   }
+    // }).filter(Boolean)
 
-    // collect putItem function
-    const player1s =
-      filteredEvents.map(event => {
-        const player1 = {
-          "id": event.player1.id,
-          "full_name": event.player1.name,
-          "url_found": true,
-        }
+    // // collect putItem function
+    // const player1s =
+    //   filteredEvents.map(event => {
+    //     const player1 = {
+    //       "id": event.player1.id,
+    //       "full_name": event.player1.name,
+    //       "url_found": true,
+    //     }
 
-        if (player1.full_name === undefined || player1.full_name === null) {
-          console.error('>>>>>player2.full_name is null')
-          console.error(player1)
-          return
-        }
+    //     if (player1.full_name === undefined || player1.full_name === null) {
+    //       console.error('>>>>>player2.full_name is null')
+    //       console.error(player1)
+    //       return
+    //     }
 
-        return putItem('tennis_players', player1)
-      })
+    //     return putItem('tennis_players', player1)
+    //   })
 
 
-    const player2s =
-      filteredEvents.map(event => {
-        const player2 = {
-          "id": event.player2.id,
-          "full_name": event.player2.name,
-          "url_found": true,
-        }
+    // const player2s =
+    //   filteredEvents.map(event => {
+    //     const player2 = {
+    //       "id": event.player2.id,
+    //       "full_name": event.player2.name,
+    //       "url_found": true,
+    //     }
 
-        if (player2.full_name === undefined || player2.full_name === null) {
-          console.error('>>>>>player2.full_name is null')
-          console.error(player2)
-          return
-        }
+    //     if (player2.full_name === undefined || player2.full_name === null) {
+    //       console.error('>>>>>player2.full_name is null')
+    //       console.error(player2)
+    //       return
+    //     }
 
-        return putItem('tennis_players', player2)
-      })
+    //     return putItem('tennis_players', player2)
+    //   })
 
-    // execute putItem on dynamodb
-    await Promise.all(player1s)
-    await Promise.all(player2s)
+    // // execute putItem on dynamodb
+    // await Promise.all(player1s)
+    // await Promise.all(player2s)
 
-    // return number of matches
+    // // return number of matches
     return events.length
   }
 
@@ -779,9 +780,10 @@ export default class ScheduleAdapter {
       await new S3ClientCustom()
         .putFile('tennis-match-schedule', 'result.json', JSON.stringify(fileContent))
 
+      insertMatchRecords(fileContent, 'tennis_matches')
+
       return fileContent
     }
-
 
     // check queue in SQS
     var getQueueAttrCommandResponse = await client.send(getQueueAttrCommand);
@@ -858,7 +860,9 @@ export default class ScheduleAdapter {
     const resultFile = await s3ClientCustom.getFile('table-tennis-match-schedule', 'result.json')
 
     if (resultFile) {
-      await this.storeToDynamoDB(resultFile)
+      // await this.storeToDynamoDB(resultFile)
+
+      insertMatchRecords(JSON.parse(resultFile), 'table_tennis_matches')
       return toTTCsv(resultFile)
     }
 
@@ -980,6 +984,8 @@ export default class ScheduleAdapter {
 
       await new S3ClientCustom()
         .putFile('table-tennis-match-schedule', 'result.json', JSON.stringify(fileContent))
+
+      insertMatchRecords(fileContent, 'table_tennis_matches')
 
       return fileContent
     }
