@@ -144,10 +144,10 @@ functions:
       - http:
           path: /predictionsTT
           method: get
-  getCurrentPredictionsTT:
-    handler: index.getCurrentPredictionsTT
+  getPendingResults:
+    handler: index.getPendingResults
     timeout: 900
     events:
       - http:
-          path: /predictionsTTCurrent
+          path: /pendingResults
           method: get

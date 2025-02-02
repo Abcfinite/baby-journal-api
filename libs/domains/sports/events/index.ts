@@ -279,8 +279,11 @@ export const getScheduleTennis: Handler = async (event: any) => {
   })
 }
 
-export const getTableTennisResults: Handler = async (event: any) => {
-  var result = await new ScheduleAdapter().getTableTennisResults()
+export const getPendingResults: Handler = async (event: any) => {
+
+  const { sport } = event.queryStringParameters
+
+  var result = await new ScheduleAdapter().getPendingResults(sport)
 
   var response = {
     statusCode: 200,

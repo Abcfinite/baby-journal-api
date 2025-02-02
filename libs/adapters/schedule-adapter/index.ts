@@ -1287,8 +1287,14 @@ export default class ScheduleAdapter {
     await Promise.all(putEvents)
   }
 
-  async getTableTennisResults() {
-    const pendingMatchesResult = await getPendingMatchRecords('table_tennis_matches')
+  async getPendingResults(sport: string) {
+
+    var tableName = 'table_tennis_matches'
+    if (sport === 'tennis') {
+      tableName = 'tennis_matches'
+    }
+
+    const pendingMatchesResult = await getPendingMatchRecords(tableName)
 
     for (const match of pendingMatchesResult) {
 
@@ -1298,7 +1304,7 @@ export default class ScheduleAdapter {
         time: '',
         stage: '',
         url: '',
-        type: '92',
+        type: sport === 'tennis' ? '13' : '92',
         competitionName: '',
         player1: {
           id: match.p1_id,
@@ -1341,11 +1347,11 @@ export default class ScheduleAdapter {
       console.log('>>>result ', result)
 
       if (result !== null) {
-        await updateMatchRecordWinner(result, 'table_tennis_matches')
+        await updateMatchRecordWinner(result, tableName)
       }
     }
 
-    return `${pendingMatchesResult.length} rows of table tennis result filled`
+    return `${pendingMatchesResult.length} rows of ${tableName} result filled`
 
   }
 }
