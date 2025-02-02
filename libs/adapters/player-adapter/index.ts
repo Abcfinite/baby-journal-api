@@ -33,9 +33,8 @@ export default class PlayerAdapter {
     const player1Id = sportEvent.player1.id
 
     const player1Matches = await new BetapiClient().getPlayerEndedMatches(player1Id, sportEvent.type)
-    const match = player1Matches.find(m => m.id === sportEvent.id)
 
-    console.log('>>>>match : ', match)
+    const match = player1Matches.find(m => m.id === sportEvent.id)
 
     if (match !== undefined && match !== null &&
       match.score !== undefined && match.score !== null &&

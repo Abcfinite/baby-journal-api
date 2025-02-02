@@ -4,7 +4,7 @@ import { Readable } from 'stream'
 
 import { Client } from 'pg'
 import { toQuery, formatResult, prediction, probability } from './src/utils/helper'
-import { insertMatchRecords } from './src/utils/database'
+import { getPendingMatchRecords, insertMatchRecords, updateMatchRecordWinner } from './src/utils/database'
 
 import S3ClientCustom from '@abcfinite/s3-client-custom'
 import { putItem, executeScan, executeQuery, executeQueryIndex, updateItem, removeItem } from '@abcfinite/dynamodb-client'
@@ -1288,29 +1288,12 @@ export default class ScheduleAdapter {
   }
 
   async getTableTennisResults() {
+    const pendingMatchesResult = await getPendingMatchRecords('table_tennis_matches')
 
-    console.log('>>>>>get table tennis results')
+    for (const match of pendingMatchesResult) {
 
-    const query1 = {
-      TableName: 'table_tennis_h2h_bm',
-      IndexName: 'waiting',
-      KeyConditionExpression: 'winner = :winner',
-      ExpressionAttributeValues: {
-        ':winner': { S: 'waiting' },
-      },
-    }
-
-    const result = await executeQueryIndex(query1)
-
-    console.log('>>>>>get table tennis results: ', result['Items'].length)
-
-    // // build sport event
-
-    const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
-
-    const ttEvents = result['Items'].map(event => {
-      return {
-        id: event.id.S,
+      const event = {
+        id: match.id,
         date: '',
         time: '',
         stage: '',
@@ -1318,8 +1301,8 @@ export default class ScheduleAdapter {
         type: '92',
         competitionName: '',
         player1: {
-          id: event.p1Id.S,
-          name: event.p1Name.S,
+          id: match.p1_id,
+          name: match.p1_name,
           country: '',
           dob: '',
           currentRanking: 0,
@@ -1335,8 +1318,8 @@ export default class ScheduleAdapter {
           h2h: 0,
         },
         player2: {
-          id: event.p2Id.S,
-          name: event.p2Name.S,
+          id: match.p2_id,
+          name: match.p2_name,
           country: '',
           dob: '',
           currentRanking: 0,
@@ -1352,48 +1335,17 @@ export default class ScheduleAdapter {
           h2h: 0
         }
       }
-    })
 
-    console.log('>>>>>ttEvents: ', ttEvents)
+      const result = await new PlayerAdapter().getResult(event);
 
-    for (const ttEvent of ttEvents) {
-      const result = await new PlayerAdapter().getResult(ttEvent);
-      if (result === null) {
-        continue
+      console.log('>>>result ', result)
+
+      if (result !== null) {
+        await updateMatchRecordWinner(result, 'table_tennis_matches')
       }
-
-      const item = {
-        TableName: 'table_tennis_h2h_bm',
-        Key: {
-          'id': { S: ttEvent.id },
-        },
-        UpdateExpression: 'SET #winner = :winner, #setScore = :setScore',
-        ExpressionAttributeNames: {
-          '#winner': 'winner',
-          '#setScore': 'setScore',
-        },
-        ExpressionAttributeValues: {
-          ':winner': { S: `${result.winner}` },
-          ':setScore': { S: `${result.setScore}` },
-        },
-      }
-
-      await updateItem(item)
     }
 
-    // remove the still waiting
-
-    // const stillWaiting = await executeQueryIndex(query1)
-
-    // console.log('>>>>>still waiting: ', stillWaiting['Items'].length)
-
-    // const deleteEvents = result['Items'].map(event => {
-    //   return removeItem('table_tennis_h2h_bm', event.id.S)
-    // })
-
-    // await Promise.all(deleteEvents)
-
-    return 'test'
+    return `${pendingMatchesResult.length} rows of table tennis result filled`
 
   }
 }

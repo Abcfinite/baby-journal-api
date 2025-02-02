@@ -6,7 +6,7 @@ export const insertMatchRecords = async (matches: Array<any>, tableName: string)
         ssl: {
             rejectUnauthorized: false
         }
-    });
+    })
 
     await connection.connect()
 
@@ -26,4 +26,34 @@ export const insertMatchRecords = async (matches: Array<any>, tableName: string)
     }
 
     await connection.end()
+}
+
+export const updateMatchRecordWinner = async (matchStatus: any, tableName: string) => {
+    const connection = new Client({
+        connectionString: 'postgres://postgres:AWqasde321!@database-1.cs5ztqximrwk.ap-southeast-2.rds.amazonaws.com/tennis',
+        ssl: {
+            rejectUnauthorized: false
+        }
+    })
+
+    await connection.connect()
+    const sql = `UPDATE ${tableName} SET winner = ${matchStatus.winner}, set_score = '${matchStatus.setScore}' WHERE id = '${matchStatus.id}'`
+    await connection.query(sql)
+    await connection.end()
+}
+
+export const getPendingMatchRecords = async (tableName: string) => {
+    const connection = new Client({
+        connectionString: 'postgres://postgres:AWqasde321!@database-1.cs5ztqximrwk.ap-southeast-2.rds.amazonaws.com/tennis',
+        ssl: {
+            rejectUnauthorized: false
+        }
+    })
+
+    await connection.connect()
+    const sql = `SELECT * FROM ${tableName} WHERE winner IS NULL`
+    const result = await connection.query(sql)
+    await connection.end()
+
+    return result.rows
 }
