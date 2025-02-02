@@ -28,6 +28,21 @@ export const insertMatchRecords = async (matches: Array<any>, tableName: string)
     await connection.end()
 }
 
+
+export const updateMatchRecordPrediction = async (matchPred: any, tableName: string) => {
+    const connection = new Client({
+        connectionString: 'postgres://postgres:AWqasde321!@database-1.cs5ztqximrwk.ap-southeast-2.rds.amazonaws.com/tennis',
+        ssl: {
+            rejectUnauthorized: false
+        }
+    })
+
+    await connection.connect()
+    const sql = `UPDATE ${tableName} SET prediction_p1_win = ${matchPred.p1Probability}, prediction_match_no = '${matchPred.probabilityMatchNo}' WHERE id = '${matchPred.id}'`
+    await connection.query(sql)
+    await connection.end()
+}
+
 export const updateMatchRecordWinner = async (matchStatus: any, tableName: string) => {
     const connection = new Client({
         connectionString: 'postgres://postgres:AWqasde321!@database-1.cs5ztqximrwk.ap-southeast-2.rds.amazonaws.com/tennis',
@@ -52,6 +67,29 @@ export const getPendingMatchRecords = async (tableName: string) => {
 
     await connection.connect()
     const sql = `SELECT * FROM ${tableName} WHERE winner IS NULL`
+    const result = await connection.query(sql)
+    await connection.end()
+
+    return result.rows
+}
+
+export const getSimilarMatch = async (match: any, tableName: string) => {
+    const connection = new Client({
+        connectionString: 'postgres://postgres:AWqasde321!@database-1.cs5ztqximrwk.ap-southeast-2.rds.amazonaws.com/tennis',
+        ssl: {
+            rejectUnauthorized: false
+        }
+    })
+
+    const h2hGap = match.h2h_p1 - match.h2h_p2
+    const bmGap = match.bm_p1 - match.bm_p2
+    const l10Gap = match.l10_p1 - match.l10_p2
+
+    await connection.connect()
+    const sql = `select * from 
+( select id , h2h_p1 - h2h_p2 as h2h_gap, bm_p1 - bm_p2 as bm_gap, l10_p1 - l10_p2 as l10_gap, winner from ${tableName} ) as matches_gap
+where h2h_gap = ${h2hGap} and bm_gap = ${bmGap} and l10_gap = ${l10Gap}`
+
     const result = await connection.query(sql)
     await connection.end()
 

@@ -61,7 +61,8 @@ export const getPredictions: Handler = async (event: any) => {
 }
 
 export const getPredictionsTT: Handler = async (event: any) => {
-  var result = await new ScheduleAdapter().getPredictionsTT()
+  const { sport } = event.queryStringParameters
+  var result = await new ScheduleAdapter().getPredictionsTT(sport)
 
   var response = {
     statusCode: 200,

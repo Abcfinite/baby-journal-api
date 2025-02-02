@@ -4,7 +4,7 @@ import { Readable } from 'stream'
 
 import { Client } from 'pg'
 import { toQuery, formatResult, prediction, probability } from './src/utils/helper'
-import { getPendingMatchRecords, insertMatchRecords, updateMatchRecordWinner } from './src/utils/database'
+import { getPendingMatchRecords, getSimilarMatch, insertMatchRecords, updateMatchRecordPrediction, updateMatchRecordWinner } from './src/utils/database'
 
 import S3ClientCustom from '@abcfinite/s3-client-custom'
 import { putItem, executeScan, executeQuery, executeQueryIndex, updateItem, removeItem } from '@abcfinite/dynamodb-client'
@@ -23,8 +23,8 @@ import { put } from "@abcfinite/dynamodb-client/src/items"
 
 export default class ScheduleAdapter {
 
-  currentCheckDate = '01/02/2025'
-  matchNoTennis = 143
+  currentCheckDate = '02/02/2025'
+  matchNoTennis = 101
   matchNoEsports = 35
 
   async removeAllCache() {
@@ -202,77 +202,27 @@ export default class ScheduleAdapter {
     return data.map(p => [p.fp, p.result, p.prediction, p.probability]).join('\r\n')
   }
 
-  async getPredictionsTT() {
-    const waitingQuery = {
-      TableName: 'table_tennis_h2h_bm',
-      IndexName: 'waiting',
-      KeyConditionExpression: 'winner = :winner',
-      ExpressionAttributeValues: {
-        ':winner': { S: 'waiting' },
-      },
+  async getPredictionsTT(sport: string) {
+    var tableName = 'table_tennis_matches'
+    if (sport === 'tennis') {
+      tableName = 'tennis_matches'
     }
 
-    const waitingQueryResult = await executeQueryIndex(waitingQuery)
+    const pendingMatchesResult = await getPendingMatchRecords(tableName)
 
-    console.log('>>>>>get table tennis results: ', waitingQueryResult['Items'].length)
+    for (const match of pendingMatchesResult) {
+      const similarMatches = await getSimilarMatch(match, tableName)
 
-    const itemUpdateStatements = []
-
-    for await (const item of waitingQueryResult['Items']) {
-      const h2hBmQuery = {
-        TableName: 'table_tennis_h2h_bm',
-        IndexName: 'h2hBm',
-        KeyConditionExpression: 'h2hBm = :h2hBm',
-        ExpressionAttributeValues: {
-          ':h2hBm': { S: item.h2hBm.S },
-        },
+      const prediction = {
+        id: match.id,
+        p1Probability: similarMatches.length > 0 ? (similarMatches.filter(m => m.winner === '1').length / similarMatches.length).toFixed(2) : '0',
+        probabilityMatchNo: similarMatches.length,
       }
 
-      const h2hBmQueryResult = await executeQueryIndex(h2hBmQuery)
+      console.log('>>>>>prediction: ', prediction)
 
-      const p1Won = h2hBmQueryResult['Items'].filter(item => item.winner.S === '1').length
-      const p2Won = h2hBmQueryResult['Items'].filter(item => item.winner.S === '2').length
-
-
-      const p1prediction = p1Won + p2Won > 0 ? (p1Won / (p1Won + p2Won)).toFixed(2) : '0'
-      const p2prediction = p1Won + p2Won > 0 ? (p2Won / (p1Won + p2Won)).toFixed(2) : '0'
-
-      const hasCleanSheet = p1prediction === p2prediction ? [] : h2hBmQueryResult['Items']
-        .filter(item => (p1prediction > p2prediction && item.winner.S === '1' && item.setScore.S === '3-0') ||
-          (p1prediction < p2prediction && item.winner.S === '2' && item.setScore.S === '0-3'))
-
-      // console.log('>>>id : ', item.id)
-      // console.log('>>>p2prediction : ', p1prediction)
-      // console.log('>>>p1prediction : ', p2prediction)
-
-      const itemUpdateStatement = {
-        TableName: 'table_tennis_h2h_bm',
-        Key: {
-          'id': { S: item.id.S },
-        },
-        UpdateExpression: 'SET #p1prediction = :p1prediction, #p2prediction = :p2prediction, #predMatchNo = :predMatchNo, #hasCleanSheet = :hasCleanSheet',
-        ExpressionAttributeNames: {
-          '#p1prediction': 'p1prediction',
-          '#p2prediction': 'p2prediction',
-          '#predMatchNo': 'predMatchNo',
-          '#hasCleanSheet': 'hasCleanSheet',
-        },
-        ExpressionAttributeValues: {
-          ':p1prediction': { S: `${p1prediction}` },
-          ':p2prediction': { S: `${p2prediction}` },
-          ':predMatchNo': { S: `${p1Won + p2Won}` },
-          ':hasCleanSheet': { S: `${hasCleanSheet.length}` },
-        },
-      }
-
-      itemUpdateStatements.push(updateItem(itemUpdateStatement))
+      await updateMatchRecordPrediction(prediction, tableName)
     }
-
-    console.log('>>>>>itemUpdateStatements: ', itemUpdateStatements.length)
-
-    await Promise.all(itemUpdateStatements)
-
-    console.log('>>>>>update completed')
 
     return 'please run getPredictionsTT'
   }
@@ -1355,3 +1305,4 @@ export default class ScheduleAdapter {
 
   }
 }
+
