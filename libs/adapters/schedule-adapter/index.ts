@@ -23,8 +23,8 @@ import { put } from "@abcfinite/dynamodb-client/src/items"
 
 export default class ScheduleAdapter {
 
-  currentCheckDate = '02/02/2025'
-  matchNoTennis = 101
+  currentCheckDate = '06/02/2025'
+  matchNoTennis = 167
   matchNoEsports = 35
 
   async removeAllCache() {
@@ -227,30 +227,28 @@ export default class ScheduleAdapter {
     return 'please run getPredictionsTT'
   }
 
-  async getCurrentPredictionsTT() {
-    const waitingQuery = {
-      TableName: 'table_tennis_h2h_bm',
-      IndexName: 'waiting',
-      KeyConditionExpression: 'winner = :winner',
-      ExpressionAttributeValues: {
-        ':winner': { S: 'waiting' },
-      },
+  async getMatchesPredictions(sport: string) {
+    var tableName = 'table_tennis_matches'
+    if (sport === 'tennis') {
+      tableName = 'tennis_matches'
     }
 
-    const waitingQueryResultAfterPrediction = await executeQueryIndex(waitingQuery)
+    const waitingQueryResultAfterPrediction = await getPendingMatchRecords(tableName)
 
     //toCSV
-    const forCsv = waitingQueryResultAfterPrediction['Items'].map(item => {
+    const forCsv = waitingQueryResultAfterPrediction.map(item => {
       return {
-        date: item.date.S,
-        time: item.time.S,
-        p1Name: item.p1Name.S,
-        p2Name: item.p2Name.S,
-        h2hBmLastWinner: item.h2hBmLastWinner.S,
-        p1prediction: item.p1prediction.S,
-        p2prediction: item.p2prediction.S,
-        predMatchNo: item.predMatchNo.S,
-        hasCleanSheet: item.hasCleanSheet.S,
+        time: new Date(Date.parse(item.match_time)).toLocaleDateString('en-GB', { hour: '2-digit', hour12: false, minute: '2-digit', second: '2-digit' }),
+        p1Name: item.p1_name,
+        p2Name: item.p2_name,
+        h2hP1: item.h2h_p1,
+        h2hP2: item.h2h_p2,
+        bmP1: item.bm_p1,
+        bmP2: item.bm_p2,
+        l10P1: item.l10_p1,
+        l10P2: item.l10_p2,
+        predictionP1Win: item.prediction_p1_win,
+        predictionMatchNo: item.prediction_match_no,
       }
     })
 
@@ -837,13 +835,15 @@ export default class ScheduleAdapter {
     if (sqsMessageNumber === 0) {
       for await (const event of events) {
         const eventDateTime = new Date(parseInt(event.time) * 1000).toLocaleString('en-GB', { timeZone: 'Australia/Sydney' })
-        const eventDate = eventDateTime.split(',')[0].trim()
 
         if (event.player1.name.includes('/')) {
           continue
         }
 
-        if (eventDate !== this.currentCheckDate) {
+        const now = Date.now()
+        const dateNow = new Date(now);
+        dateNow.setMinutes(dateNow.getMinutes() + 30);
+        if ((parseInt(event.time) * 1000) > dateNow.getTime()) {
           continue
         }
 

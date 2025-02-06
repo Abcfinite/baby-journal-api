@@ -64,6 +64,11 @@ export default class PlayerAdapter {
     const p1L10 = player1Matches.slice(0, 10).filter(p1m => p1m.player1.id === player1Id ? p1m.player1won : !p1m.player1won).length
     const p2L10 = player2Matches.slice(0, 10).filter(p2m => p2m.player1.id === player2Id ? p2m.player1won : !p2m.player1won).length
 
+    const p1Consistency = this.playerConsistency(player1Matches, player1Id)
+
+    const p2Consistency = this.playerConsistency(player2Matches, player2Id)
+
+
     const h2hAll = player1Matches.filter(p1m => p1m.player1.id === player2Id || p1m.player2.id === player2Id)
 
     let h2hP1Won = 0
@@ -132,7 +137,7 @@ export default class PlayerAdapter {
     const h2hP2 = h2hNo - h2hP1Won
     const h2hLastWinner = h2hP1WonLast ? 1 : 2
 
-    return {
+    const result = {
       "id": sportEvent.id,
       "date": sportEvent.date,
       "time": sportEvent.time,
@@ -149,8 +154,55 @@ export default class PlayerAdapter {
       "h2hBmLastWinner": `${h2hP1Won}#${h2hP2}#${h2hLastWinner}#${p1BMF}#${p2BMF}`,
       p1L10,
       p2L10,
+      p1Consistency,
+      p2Consistency,
       "setScore": 'waiting',
       "winner": 'waiting'
+    }
+
+    console.log('>>>>>result', result)
+    return result
+  }
+
+  playerConsistency(player1Matches: any, player1Id: string) {
+
+    let wonWon = 0
+    let wonLost = 0
+    let lostWon = 0
+    let lostLost = 0
+
+
+    let outIndex = 1
+    const reversedPlayer1MatchesL10 = player1Matches.slice(0, 10).reverse()
+    reversedPlayer1MatchesL10.forEach(p1m => {
+
+      const opponentId = p1m.player1.id === player1Id ? p1m.player2.id : p1m.player1.id
+      const playerWon = p1m.player1.id === player1Id ? p1m.player1won : !p1m.player1won
+
+      reversedPlayer1MatchesL10.slice(outIndex, 10).forEach(p1m2 => {
+
+        if (p1m2.player1.id === opponentId || p1m2.player2.id === opponentId) {
+          const playerWonNext = p1m2.player1.id === player1Id ? p1m2.player1won : !p1m2.player1won
+
+          if (playerWon && playerWonNext) {
+            wonWon++
+          } else if (playerWon && !playerWonNext) {
+            wonLost++
+          } else if (!playerWon && playerWonNext) {
+            lostWon++
+          } else if (!playerWon && !playerWonNext) {
+            lostLost++
+          }
+        }
+      })
+      outIndex++
+    })
+
+    return {
+      wonWon,
+      wonLost,
+      lostWon,
+      lostLost
     }
   }
 

@@ -239,21 +239,35 @@ export const toTTPredCsv = (items: any): string => {
   const csvHeader = [
     'odd',
     'bet on',
-    'result',
-    'date',
-    'time',
+    'winner',
+    'notes',
 
+    'time',
     'p1 name',
     'p2 name',
-    'h2hBmLastWinner',
-    'p1prediction',
-    'p2prediction',
+    'h2h P1',
+    'h2h P2',
+    'BM P1',
+    'BM P2',
+    'L10 P1',
+    'L10 P2',
 
-    'hasCleanSheet',
+    'p1 won won',
+    'p1 won lost',
+    'p1 lost won',
+    'p1 lost lost',
+
+    'p2 won won',
+    'p2 won lost',
+    'p2 lost won',
+    'p2 lost lost',
+
     'h2h gap',
     'BM gap',
-    'predMatchNo',
+    'L10 gap',
 
+    'P1 win prediction',
+    'prediction match no',
   ].join(',')
 
   const resultArray = [csvHeader]
@@ -263,19 +277,35 @@ export const toTTPredCsv = (items: any): string => {
       '',
       '',
       '',
-      m['date'],
-      m['time'],
+      '',
 
+      m['time'],
       m['p1Name'],
       m['p2Name'],
-      m['h2hBmLastWinner'],
-      m['p1prediction'],
-      m['p2prediction'],
+      m['h2hP1'],
+      m['h2hP2'],
+      m['bmP1'],
+      m['bmP2'],
+      m['l10P1'],
+      m['l10P2'],
 
-      m['hasCleanSheet'],
-      Number(m['h2hBmLastWinner'].split('#')[0]) - Number(m['h2hBmLastWinner'].split('#')[1]),
-      Number(m['h2hBmLastWinner'].split('#')[3]) - Number(m['h2hBmLastWinner'].split('#')[4]),
-      m['predMatchNo'],
+      Number(m['h2hP1']) - Number(m['h2hP2']),
+      Number(m['bmP1']) - Number(m['bmP2']),
+      Number(m['l10P1']) - Number(m['l10P2']),
+
+      m['p1WonWon'],
+      m['p1WonLost'],
+      m['p1LostWon'],
+      m['p1LostLost'],
+
+      m['p2WonWon'],
+      m['p2WonLost'],
+      m['p2LostWon'],
+      m['p2LostLost'],
+
+      m['predictionP1Win'],
+      m['predictionMatchNo'],
+
     ].join(','))
   })
 

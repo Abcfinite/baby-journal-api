@@ -108,6 +108,13 @@ functions:
       - http:
           path: /predictions
           method: get
+  getMatchesPredictions:
+    handler: index.getMatchesPredictions
+    timeout: 900
+    events:
+      - http:
+          path: /matchesPredictions
+          method: get
   result:
     handler: index.getResults
     timeout: 900
