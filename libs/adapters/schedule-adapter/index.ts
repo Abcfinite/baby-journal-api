@@ -23,8 +23,8 @@ import { put } from "@abcfinite/dynamodb-client/src/items"
 
 export default class ScheduleAdapter {
 
-  currentCheckDate = '06/02/2025'
-  matchNoTennis = 167
+  currentCheckDate = '08/02/2025'
+  matchNoTennis = 118
   matchNoEsports = 35
 
   async removeAllCache() {
@@ -237,16 +237,31 @@ export default class ScheduleAdapter {
 
     //toCSV
     const forCsv = waitingQueryResultAfterPrediction.map(item => {
+
       return {
         time: new Date(Date.parse(item.match_time)).toLocaleDateString('en-GB', { hour: '2-digit', hour12: false, minute: '2-digit', second: '2-digit' }),
         p1Name: item.p1_name,
         p2Name: item.p2_name,
+        p1LastGameWon: item.p1_last_game_won,
+        p2LastGameWon: item.p2_last_game_won,
+        p1LastGameSetScore: item.p1_last_game_set_score,
+        p2LastGameSetScore: item.p2_last_game_set_score,
+        p1LastGameOpponentName: item.p1_last_game_opponent_name,
+        p2LastGameOpponentName: item.p2_last_game_opponent_name,
         h2hP1: item.h2h_p1,
         h2hP2: item.h2h_p2,
         bmP1: item.bm_p1,
         bmP2: item.bm_p2,
         l10P1: item.l10_p1,
         l10P2: item.l10_p2,
+        p1WonWon: item.p1_won_won,
+        p1WonLost: item.p1_won_lost,
+        p1LostWon: item.p1_lost_won,
+        p1LostLost: item.p1_lost_lost,
+        p2WonWon: item.p2_won_won,
+        p2WonLost: item.p2_won_lost,
+        p2LostWon: item.p2_lost_won,
+        p2LostLost: item.p2_lost_lost,
         predictionP1Win: item.prediction_p1_win,
         predictionMatchNo: item.prediction_match_no,
       }
@@ -843,7 +858,8 @@ export default class ScheduleAdapter {
         const now = Date.now()
         const dateNow = new Date(now);
         dateNow.setMinutes(dateNow.getMinutes() + 30);
-        if ((parseInt(event.time) * 1000) > dateNow.getTime()) {
+        if ((parseInt(event.time) * 1000) < now ||
+          (parseInt(event.time) * 1000) > dateNow.getTime()) {
           continue
         }
 

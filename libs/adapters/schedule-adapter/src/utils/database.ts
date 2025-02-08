@@ -11,20 +11,36 @@ export const insertMatchRecords = async (matches: Array<any>, tableName: string)
     await connection.connect()
 
     for (const match of matches) {
+
+        if (match['p1Consistency'] === undefined || match['p2Consistency'] === undefined) {
+            continue
+        }
+
+        let tableTennisAttributes = ''
+        let tableTennisValues = ''
+        if (tableName === 'table_tennis_matches') {
+            tableTennisAttributes = ', p1_last_game_won, p2_last_game_won, p1_last_game_set_score, p2_last_game_set_score, p1_last_game_opponent_name, p2_last_game_opponent_name'
+            tableTennisValues = `, ${match['p1LastGameWon']}, ${match['p2LastGameWon']}, 
+                '${match['p1LastGameSetScore']}', '${match['p2LastGameSetScore']}', 
+                '${match['p1LastGameOpponentName']}', '${match['p2LastGameOpponentName']}'`
+        }
+
         try {
             const unixTime = Date.parse(`${match['date']} ${match['time']}`)
             const timestamp = new Date(unixTime)
             const localTimestamp = timestamp.toLocaleDateString('en-ZA', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', hour12: false, minute: '2-digit', second: '2-digit' })
             const sql = `INSERT INTO ${tableName} (id, match_time, p1_id, p2_id, p1_name, p2_name, h2h_p1, h2h_p2, bm_p1, bm_p2, l10_p1, l10_p2,
                     p1_won_won, p1_won_lost, p1_lost_won, p1_lost_lost,
-                    p2_won_won, p2_won_lost, p2_lost_won, p2_lost_lost)
+                    p2_won_won, p2_won_lost, p2_lost_won, p2_lost_lost ${tableTennisAttributes})
                 VALUES ('${match['id']}', '${localTimestamp}', '${match['p1Id']}', '${match['p2Id']}', '${match['p1Name']}', '${match['p2Name']}', 
                     ${match['h2hP1']}, ${match['h2hP2']}, ${match['bmP1']}, ${match['bmP2']}, ${match['p1L10']}, ${match['p2L10']},
                     ${match['p1Consistency']['wonWon']}, ${match['p1Consistency']['wonLost']}, ${match['p1Consistency']['lostWon']}, ${match['p1Consistency']['lostLost']},
-                    ${match['p2Consistency']['wonWon']}, ${match['p2Consistency']['wonLost']}, ${match['p2Consistency']['lostWon']}, ${match['p2Consistency']['lostLost']})`
+                    ${match['p2Consistency']['wonWon']}, ${match['p2Consistency']['wonLost']}, ${match['p2Consistency']['lostWon']}, ${match['p2Consistency']['lostLost']} 
+                    ${tableTennisValues})`
             await connection.query(sql)
         } catch (error) {
             console.error('error cannot insert', error);
+            continue
         }
     }
 

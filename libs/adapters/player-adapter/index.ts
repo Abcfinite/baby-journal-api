@@ -65,9 +65,7 @@ export default class PlayerAdapter {
     const p2L10 = player2Matches.slice(0, 10).filter(p2m => p2m.player1.id === player2Id ? p2m.player1won : !p2m.player1won).length
 
     const p1Consistency = this.playerConsistency(player1Matches, player1Id)
-
     const p2Consistency = this.playerConsistency(player2Matches, player2Id)
-
 
     const h2hAll = player1Matches.filter(p1m => p1m.player1.id === player2Id || p1m.player2.id === player2Id)
 
@@ -160,12 +158,29 @@ export default class PlayerAdapter {
       "winner": 'waiting'
     }
 
-    console.log('>>>>>result', result)
-    return result
+    if (sportEvent.type !== '92') return result
+
+    const p1LastGameWon = player1Matches[0].player1.id === player1Id ? player1Matches[0].player1won : !player1Matches[0].player1won
+    const p2LastGameWon = player2Matches[0].player1.id === player2Id ? player2Matches[0].player1won : !player2Matches[0].player1won
+    const p1LastGameSetScore = player1Matches[0].score
+    const p2LastGameSetScore = player2Matches[0].score
+    const p1LastGameOpponentName = player1Matches[0].player1.id === player1Id ? player1Matches[0].player2.name : player1Matches[0].player1.name
+    const p2LastGameOpponentName = player2Matches[0].player1.id === player2Id ? player1Matches[0].player2.name : player1Matches[0].player1.name
+
+    const tableTennisResult = {
+      ...result,
+      p1LastGameWon,
+      p2LastGameWon,
+      p1LastGameSetScore,
+      p2LastGameSetScore,
+      p1LastGameOpponentName,
+      p2LastGameOpponentName
+    }
+
+    return tableTennisResult
   }
 
   playerConsistency(player1Matches: any, player1Id: string) {
-
     let wonWon = 0
     let wonLost = 0
     let lostWon = 0

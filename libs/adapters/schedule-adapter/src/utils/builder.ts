@@ -217,7 +217,7 @@ export const toTTCsv = (jsonString: string): string => {
       '',
       '',
       m['date'],
-      m['time'],
+      m['time'].split(',')[1],
 
       m['p1Name'],
       m['p2Name'],
@@ -245,6 +245,23 @@ export const toTTPredCsv = (items: any): string => {
     'time',
     'p1 name',
     'p2 name',
+
+    'p1 last game won',
+    'p2 last game won',
+    'p1 last game set score',
+    'p2 last game set score',
+    'p1 last game opponent name',
+    'p2 last game opponent name',
+
+    'h2h gap',
+    'BM gap',
+    'L10 gap',
+
+    'won won gap',
+    'won lost gap',
+    'lost won gap',
+    'lost lost gap',
+
     'h2h P1',
     'h2h P2',
     'BM P1',
@@ -262,10 +279,6 @@ export const toTTPredCsv = (items: any): string => {
     'p2 lost won',
     'p2 lost lost',
 
-    'h2h gap',
-    'BM gap',
-    'L10 gap',
-
     'P1 win prediction',
     'prediction match no',
   ].join(',')
@@ -279,19 +292,32 @@ export const toTTPredCsv = (items: any): string => {
       '',
       '',
 
-      m['time'],
+      m['time'].split(',')[1],
       m['p1Name'],
       m['p2Name'],
+
+      m['p1LastGameWon'],
+      m['p2LastGameWon'],
+      m['p1LastGameSetScore'],
+      m['p2LastGameSetScore'],
+      m['p1LastGameOpponentName'],
+      m['p2LastGameOpponentName'],
+
+      Number(m['h2hP1']) - Number(m['h2hP2']),
+      Number(m['bmP1']) - Number(m['bmP2']),
+      Number(m['l10P1']) - Number(m['l10P2']),
+
+      Number(m['p1WonWon']) - Number(m['p2WonWon']),
+      Number(m['p2WonLost']) - Number(m['p1WonLost']),
+      Number(m['p1LostWon']) - Number(m['p2LostWon']),
+      Number(m['p2LostLost']) - Number(m['p1LostLost']),
+
       m['h2hP1'],
       m['h2hP2'],
       m['bmP1'],
       m['bmP2'],
       m['l10P1'],
       m['l10P2'],
-
-      Number(m['h2hP1']) - Number(m['h2hP2']),
-      Number(m['bmP1']) - Number(m['bmP2']),
-      Number(m['l10P1']) - Number(m['l10P2']),
 
       m['p1WonWon'],
       m['p1WonLost'],
