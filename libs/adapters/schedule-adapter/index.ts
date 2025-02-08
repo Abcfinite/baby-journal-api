@@ -856,10 +856,12 @@ export default class ScheduleAdapter {
         }
 
         const now = Date.now()
-        const dateNow = new Date(now);
-        dateNow.setMinutes(dateNow.getMinutes() + 30);
-        if ((parseInt(event.time) * 1000) < now ||
-          (parseInt(event.time) * 1000) > dateNow.getTime()) {
+        const checkStart = new Date(now)
+        checkStart.setMinutes(checkStart.getMinutes() + 15)
+        const checkEnd = new Date(now)
+        checkEnd.setMinutes(checkEnd.getMinutes() + 45)
+        if ((parseInt(event.time) * 1000) < checkStart.getTime() ||
+          (parseInt(event.time) * 1000) > checkEnd.getTime()) {
           continue
         }
 

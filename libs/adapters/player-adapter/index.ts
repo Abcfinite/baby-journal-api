@@ -165,7 +165,7 @@ export default class PlayerAdapter {
     const p1LastGameSetScore = player1Matches[0].score
     const p2LastGameSetScore = player2Matches[0].score
     const p1LastGameOpponentName = player1Matches[0].player1.id === player1Id ? player1Matches[0].player2.name : player1Matches[0].player1.name
-    const p2LastGameOpponentName = player2Matches[0].player1.id === player2Id ? player1Matches[0].player2.name : player1Matches[0].player1.name
+    const p2LastGameOpponentName = player2Matches[0].player1.id === player2Id ? player2Matches[0].player2.name : player2Matches[0].player1.name
 
     const tableTennisResult = {
       ...result,
