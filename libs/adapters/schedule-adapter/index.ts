@@ -4,7 +4,7 @@ import { Readable } from 'stream'
 
 import { Client } from 'pg'
 import { toQuery, formatResult, prediction, probability } from './src/utils/helper'
-import { getPendingMatchRecords, getSimilarMatch, insertMatchRecords, updateMatchRecordPrediction, updateMatchRecordWinner } from './src/utils/database'
+import { getPendingMatchRecords, getSimilarMatch, getTtSimilarMatch, insertMatchRecords, updateMatchRecordPrediction, updateMatchRecordWinner } from './src/utils/database'
 
 import S3ClientCustom from '@abcfinite/s3-client-custom'
 import { putItem, executeScan, executeQuery, executeQueryIndex, updateItem, removeItem } from '@abcfinite/dynamodb-client'
@@ -23,8 +23,8 @@ import { put } from "@abcfinite/dynamodb-client/src/items"
 
 export default class ScheduleAdapter {
 
-  currentCheckDate = '08/02/2025'
-  matchNoTennis = 118
+  currentCheckDate = '11/02/2025' //esports only
+  matchNoTennis = 229
   matchNoEsports = 35
 
   async removeAllCache() {
@@ -211,7 +211,7 @@ export default class ScheduleAdapter {
     const pendingMatchesResult = await getPendingMatchRecords(tableName)
 
     for (const match of pendingMatchesResult) {
-      const similarMatches = await getSimilarMatch(match, tableName)
+      const similarMatches = await getTtSimilarMatch(match, tableName)
 
       const prediction = {
         id: match.id,
@@ -663,7 +663,13 @@ export default class ScheduleAdapter {
           continue
         }
 
-        if (eventDate !== this.currentCheckDate) {
+        const now = Date.now()
+        const checkStart = new Date(now)
+        checkStart.setMinutes(checkStart.getMinutes() + 15)
+        const checkEnd = new Date(now)
+        checkEnd.setDate(checkEnd.getDate() + 1);
+        if ((parseInt(event.time) * 1000) < checkStart.getTime() ||
+          (parseInt(event.time) * 1000) > checkEnd.getTime()) {
           continue
         }
 
@@ -857,9 +863,9 @@ export default class ScheduleAdapter {
 
         const now = Date.now()
         const checkStart = new Date(now)
-        checkStart.setMinutes(checkStart.getMinutes() + 15)
+        checkStart.setMinutes(checkStart.getMinutes() + 5)
         const checkEnd = new Date(now)
-        checkEnd.setMinutes(checkEnd.getMinutes() + 45)
+        checkEnd.setMinutes(checkEnd.getMinutes() + 35)
         if ((parseInt(event.time) * 1000) < checkStart.getTime() ||
           (parseInt(event.time) * 1000) > checkEnd.getTime()) {
           continue

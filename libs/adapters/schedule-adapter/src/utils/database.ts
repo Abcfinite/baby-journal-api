@@ -26,9 +26,12 @@ export const insertMatchRecords = async (matches: Array<any>, tableName: string)
         }
 
         try {
-            const unixTime = Date.parse(`${match['date']} ${match['time']}`)
+            const parsedDate = match['date'].split('/')
+            const formattedDate = `${parsedDate[2]}-${parsedDate[1]}-${parsedDate[0]}`
+            const unixTime = Date.parse(`${formattedDate} ${match['time']}`)
             const timestamp = new Date(unixTime)
             const localTimestamp = timestamp.toLocaleDateString('en-ZA', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', hour12: false, minute: '2-digit', second: '2-digit' })
+
             const sql = `INSERT INTO ${tableName} (id, match_time, p1_id, p2_id, p1_name, p2_name, h2h_p1, h2h_p2, bm_p1, bm_p2, l10_p1, l10_p2,
                     p1_won_won, p1_won_lost, p1_lost_won, p1_lost_lost,
                     p2_won_won, p2_won_lost, p2_lost_won, p2_lost_lost ${tableTennisAttributes})
@@ -108,6 +111,41 @@ export const getSimilarMatch = async (match: any, tableName: string) => {
     const sql = `select * from 
 ( select id , h2h_p1 - h2h_p2 as h2h_gap, bm_p1 - bm_p2 as bm_gap, l10_p1 - l10_p2 as l10_gap, winner from ${tableName} ) as matches_gap
 where h2h_gap = ${h2hGap} and bm_gap = ${bmGap} and l10_gap = ${l10Gap} and winner is not null`
+
+    const result = await connection.query(sql)
+    await connection.end()
+
+    return result.rows
+}
+
+
+export const getTtSimilarMatch = async (match: any, tableName: string) => {
+    const connection = new Client({
+        connectionString: 'postgres://postgres:AWqasde321!@database-1.cs5ztqximrwk.ap-southeast-2.rds.amazonaws.com/tennis',
+        ssl: {
+            rejectUnauthorized: false
+        }
+    })
+
+    const reverse_p1_last_game_score = match.p1_last_game_set_score.split('-').reverse().join('-')
+    const reverse_p2_last_game_score = match.p2_last_game_set_score.split('-').reverse().join('-')
+
+    await connection.connect()
+    const sql = `select * from ${tableName}
+        where h2h_p1 = ${match.h2h_p1} and h2h_p2 = ${match.h2h_p2}
+            and bm_p1 = ${match.bm_p1} and bm_p2 = ${match.bm_p2}
+            and l10_p1 = ${match.l10_p1} and l10_p2 = ${match.l10_p2}
+            and p1_won_won = ${match.p1_won_won} and p2_won_won = ${match.p2_won_won}
+            and p1_won_lost = ${match.p1_won_lost} and p2_won_lost = ${match.p2_won_lost}
+            and p1_lost_won = ${match.p1_lost_won} and p2_lost_won = ${match.p2_lost_won}
+            and p1_lost_lost = ${match.p1_lost_lost} and p2_lost_lost = ${match.p2_lost_lost}
+	        and p1_last_game_won = ${match.p1_last_game_won}
+	        and p2_last_game_won = ${match.p2_last_game_won}
+	        and ( p1_last_game_set_score = '${match.p1_last_game_set_score}'
+		        or p1_last_game_set_score = '${reverse_p1_last_game_score}' )
+            and ( p1_last_game_set_score = '${match.p2_last_game_set_score}'
+		        or p1_last_game_set_score = '${reverse_p2_last_game_score}' )
+	        and winner is not null`
 
     const result = await connection.query(sql)
     await connection.end()
