@@ -253,6 +253,9 @@ export const toTTPredCsv = (items: any): string => {
     'p1 last game opponent name',
     'p2 last game opponent name',
 
+    'p1 match no',
+    'p2 match no',
+
     'h2h gap',
     'BM gap',
     'L10 gap',
@@ -281,6 +284,11 @@ export const toTTPredCsv = (items: any): string => {
 
     'P1 win prediction',
     'prediction match no',
+    'P1 win prediction 2',
+    'prediction 2 match no',
+    'P1 win prediction 2 Rev',
+    'prediction 2 Rev match no',
+
   ].join(',')
 
   const resultArray = [csvHeader]
@@ -302,6 +310,9 @@ export const toTTPredCsv = (items: any): string => {
       m['p2LastGameSetScore'],
       m['p1LastGameOpponentName'],
       m['p2LastGameOpponentName'],
+
+      m['p1MatchNo'],
+      m['p2MatchNo'],
 
       Number(m['h2hP1']) - Number(m['h2hP2']),
       Number(m['bmP1']) - Number(m['bmP2']),
@@ -331,6 +342,10 @@ export const toTTPredCsv = (items: any): string => {
 
       m['predictionP1Win'],
       m['predictionMatchNo'],
+      m['prediction2P1Win'],
+      m['prediction2MatchNo'],
+      m['prediction2RevP1Win'],
+      m['prediction2RevMatchNo'],
 
     ].join(','))
   })

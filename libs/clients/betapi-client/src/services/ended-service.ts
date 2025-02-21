@@ -3,9 +3,10 @@ import PagingParser from '../parsers/pagingParser'
 import HttpApiClient from '@abcfinite/http-api-client'
 import CacheService from './cache-service'
 import { Event } from '../types/event'
+import { EventTotal } from '@/types/eventTotal'
 
 export default class EndedService {
-  getEndedEventBasedOnPlayerId = async (playerId: string, sportId: string, fullPages = false) => {
+  getEndedEventBasedOnPlayerId = async (playerId: string, sportId: string, fullPages = false): Promise<EventTotal> => {
     const httpApiClient = new HttpApiClient()
     const resultFirstPage = await httpApiClient.getNative(
       'api.b365api.com',
@@ -54,7 +55,7 @@ export default class EndedService {
     // console.log('>>>>fullEndedEvents')
     // console.log(fullEndedEvents)
 
-    return fullEndedEvents
+    return { matchNo: paging.total, events: fullEndedEvents }
   }
 
   async getEveryPage(pageNo: number, playerId: string, sportId: string) {

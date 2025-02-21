@@ -5,13 +5,14 @@ import { Event } from './src/types/event';
 import EventParser from './src/parsers/eventParser';
 import CacheService from './src/services/cache-service';
 import EndedService from './src/services/ended-service';
+import { EventTotal } from '@/types/eventTotal';
 
 export default class BetapiClient {
 
   constructor() {
   }
 
-  async getPlayerEndedMatches(playerId: string, sportId: string, fullPages = false): Promise<Array<Event>> {
+  async getPlayerEndedMatches(playerId: string, sportId: string, fullPages = false): Promise<EventTotal> {
     return await new EndedService().getEndedEventBasedOnPlayerId(playerId, sportId, fullPages)
   }
 

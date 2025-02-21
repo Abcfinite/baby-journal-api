@@ -34,11 +34,12 @@ export const insertMatchRecords = async (matches: Array<any>, tableName: string)
 
             const sql = `INSERT INTO ${tableName} (id, match_time, p1_id, p2_id, p1_name, p2_name, h2h_p1, h2h_p2, bm_p1, bm_p2, l10_p1, l10_p2,
                     p1_won_won, p1_won_lost, p1_lost_won, p1_lost_lost,
-                    p2_won_won, p2_won_lost, p2_lost_won, p2_lost_lost ${tableTennisAttributes})
+                    p2_won_won, p2_won_lost, p2_lost_won, p2_lost_lost, p1_match_no, p2_match_no, p1_streak, p2_streak ${tableTennisAttributes})
                 VALUES ('${match['id']}', '${localTimestamp}', '${match['p1Id']}', '${match['p2Id']}', '${match['p1Name']}', '${match['p2Name']}', 
                     ${match['h2hP1']}, ${match['h2hP2']}, ${match['bmP1']}, ${match['bmP2']}, ${match['p1L10']}, ${match['p2L10']},
                     ${match['p1Consistency']['wonWon']}, ${match['p1Consistency']['wonLost']}, ${match['p1Consistency']['lostWon']}, ${match['p1Consistency']['lostLost']},
-                    ${match['p2Consistency']['wonWon']}, ${match['p2Consistency']['wonLost']}, ${match['p2Consistency']['lostWon']}, ${match['p2Consistency']['lostLost']} 
+                    ${match['p2Consistency']['wonWon']}, ${match['p2Consistency']['wonLost']}, ${match['p2Consistency']['lostWon']}, ${match['p2Consistency']['lostLost']},
+                    ${match['p1MatchNo']}, ${match['p2MatchNo']}, ${match['p1Streak']}, ${match['p2Streak']}
                     ${tableTennisValues})`
             await connection.query(sql)
         } catch (error) {
@@ -61,6 +62,34 @@ export const updateMatchRecordPrediction = async (matchPred: any, tableName: str
 
     await connection.connect()
     const sql = `UPDATE ${tableName} SET prediction_p1_win = ${matchPred.p1Probability}, prediction_match_no = '${matchPred.probabilityMatchNo}' WHERE id = '${matchPred.id}'`
+    await connection.query(sql)
+    await connection.end()
+}
+
+export const updateMatchRecordPredictionAlt2 = async (matchPred: any, tableName: string) => {
+    const connection = new Client({
+        connectionString: 'postgres://postgres:AWqasde321!@database-1.cs5ztqximrwk.ap-southeast-2.rds.amazonaws.com/tennis',
+        ssl: {
+            rejectUnauthorized: false
+        }
+    })
+
+    await connection.connect()
+    const sql = `UPDATE ${tableName} SET prediction_2_p1_win = ${matchPred.p1Probability}, prediction_2_match_no = ${matchPred.probabilityMatchNo} WHERE id = '${matchPred.id}'`
+    await connection.query(sql)
+    await connection.end()
+}
+
+export const updateMatchRecordPredictionAlt2Rev = async (matchPred: any, tableName: string) => {
+    const connection = new Client({
+        connectionString: 'postgres://postgres:AWqasde321!@database-1.cs5ztqximrwk.ap-southeast-2.rds.amazonaws.com/tennis',
+        ssl: {
+            rejectUnauthorized: false
+        }
+    })
+
+    await connection.connect()
+    const sql = `UPDATE ${tableName} SET prediction_2_rev_p1_win = ${matchPred.p1Probability}, prediction_2_rev_match_no = ${matchPred.probabilityMatchNo} WHERE id = '${matchPred.id}'`
     await connection.query(sql)
     await connection.end()
 }
@@ -89,6 +118,8 @@ export const getPendingMatchRecords = async (tableName: string) => {
 
     await connection.connect()
     const sql = `SELECT * FROM ${tableName} WHERE winner IS NULL`
+    // and match_time > '2025-12-02 00:00:00' 
+    // and match_time < '2025-12-02 23:23:59'`
     const result = await connection.query(sql)
     await connection.end()
 
@@ -118,6 +149,64 @@ where h2h_gap = ${h2hGap} and bm_gap = ${bmGap} and l10_gap = ${l10Gap} and winn
     return result.rows
 }
 
+export const getSimilarMatchAlt2 = async (match: any, tableName: string) => {
+    const connection = new Client({
+        connectionString: 'postgres://postgres:AWqasde321!@database-1.cs5ztqximrwk.ap-southeast-2.rds.amazonaws.com/tennis',
+        ssl: {
+            rejectUnauthorized: false
+        }
+    })
+
+    let setScoreQuery = "(set_score = '0-3' or set_score = '3-0')"
+
+    if (tableName === 'tennis_matches') {
+        setScoreQuery = "set_score like '___,___'"
+    }
+
+
+    await connection.connect()
+    const sql = `select * from ${tableName} 
+    where ${setScoreQuery}
+	    and h2h_p1=${match.h2h_p1} and h2h_p2=${match.h2h_p2}
+	    and bm_p1=${match.bm_p1} and bm_p2=${match.bm_p2}
+	    and l10_p1=${match.l10_p1} and l10_p2=${match.l10_p2}
+	    and winner is not null`
+
+    const result = await connection.query(sql)
+    await connection.end()
+
+    return result.rows
+}
+
+export const getSimilarMatchAlt2Rev = async (match: any, tableName: string) => {
+    const connection = new Client({
+        connectionString: 'postgres://postgres:AWqasde321!@database-1.cs5ztqximrwk.ap-southeast-2.rds.amazonaws.com/tennis',
+        ssl: {
+            rejectUnauthorized: false
+        }
+    })
+
+    let setScoreQuery = "(set_score = '0-3' or set_score = '3-0')"
+
+    if (tableName === 'tennis_matches') {
+        setScoreQuery = "set_score like '___,___'"
+    }
+
+
+    await connection.connect()
+    const sql = `select * from ${tableName} 
+    where ${setScoreQuery}
+	    and h2h_p2=${match.h2h_p1} and h2h_p1=${match.h2h_p2}
+	    and bm_p2=${match.bm_p1} and bm_p1=${match.bm_p2}
+	    and l10_p2=${match.l10_p1} and l10_p1=${match.l10_p2}
+	    and winner is not null`
+
+    const result = await connection.query(sql)
+    await connection.end()
+
+    return result.rows
+}
+
 
 export const getTtSimilarMatch = async (match: any, tableName: string) => {
     const connection = new Client({
@@ -127,8 +216,20 @@ export const getTtSimilarMatch = async (match: any, tableName: string) => {
         }
     })
 
-    const reverse_p1_last_game_score = match.p1_last_game_set_score.split('-').reverse().join('-')
-    const reverse_p2_last_game_score = match.p2_last_game_set_score.split('-').reverse().join('-')
+    let tableTennisExtras = ''
+    let tableTennisExtras2 = ''
+
+    if (tableName === 'table_tennis_matches') {
+        const reverse_p1_last_game_score = match.p1_last_game_set_score.split('-').reverse().join('-')
+        const reverse_p2_last_game_score = match.p2_last_game_set_score.split('-').reverse().join('-')
+
+        tableTennisExtras = `and p1_last_game_won = ${match.p1_last_game_won}
+            and p2_last_game_won = ${match.p2_last_game_won}
+            and(p1_last_game_set_score = '${match.p1_last_game_set_score}'
+                or p1_last_game_set_score = '${reverse_p1_last_game_score}')
+            and(p2_last_game_set_score = '${match.p2_last_game_set_score}'
+                or p2_last_game_set_score = '${reverse_p2_last_game_score}')`
+    }
 
     await connection.connect()
     const sql = `select * from ${tableName}
@@ -139,12 +240,7 @@ export const getTtSimilarMatch = async (match: any, tableName: string) => {
             and p1_won_lost = ${match.p1_won_lost} and p2_won_lost = ${match.p2_won_lost}
             and p1_lost_won = ${match.p1_lost_won} and p2_lost_won = ${match.p2_lost_won}
             and p1_lost_lost = ${match.p1_lost_lost} and p2_lost_lost = ${match.p2_lost_lost}
-	        and p1_last_game_won = ${match.p1_last_game_won}
-	        and p2_last_game_won = ${match.p2_last_game_won}
-	        and ( p1_last_game_set_score = '${match.p1_last_game_set_score}'
-		        or p1_last_game_set_score = '${reverse_p1_last_game_score}' )
-            and ( p1_last_game_set_score = '${match.p2_last_game_set_score}'
-		        or p1_last_game_set_score = '${reverse_p2_last_game_score}' )
+	        ${tableTennisExtras}
 	        and winner is not null`
 
     const result = await connection.query(sql)

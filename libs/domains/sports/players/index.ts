@@ -4,8 +4,11 @@ import { Handler } from 'aws-lambda';
 export const getPlayer: Handler = async (event: any) => {
   const { player1Id, player2Id } = event.queryStringParameters
 
-  const player1Matches = await new BetapiClient().getPlayerEndedMatches(player1Id, '92')
-  const player2Matches = await new BetapiClient().getPlayerEndedMatches(player2Id, '92')
+  const player1MatchesSum = await new BetapiClient().getPlayerEndedMatches(player1Id, '92')
+  const player2MatchesSum = await new BetapiClient().getPlayerEndedMatches(player2Id, '92')
+
+  const player1Matches = player1MatchesSum.events
+  const player2Matches = player2MatchesSum.events
 
   const responseText = `player 1 matches: ${player1Matches.length}, player 2 matches: ${player2Matches.length}`
 
