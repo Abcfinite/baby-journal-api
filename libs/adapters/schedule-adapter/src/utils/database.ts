@@ -39,7 +39,7 @@ export const insertMatchRecords = async (matches: Array<any>, tableName: string)
                     ${match['h2hP1']}, ${match['h2hP2']}, ${match['bmP1']}, ${match['bmP2']}, ${match['p1L10']}, ${match['p2L10']},
                     ${match['p1Consistency']['wonWon']}, ${match['p1Consistency']['wonLost']}, ${match['p1Consistency']['lostWon']}, ${match['p1Consistency']['lostLost']},
                     ${match['p2Consistency']['wonWon']}, ${match['p2Consistency']['wonLost']}, ${match['p2Consistency']['lostWon']}, ${match['p2Consistency']['lostLost']},
-                    ${match['p1MatchNo']}, ${match['p2MatchNo']}, ${match['p1Streak']}, ${match['p2Streak']}
+                    ${match['p1MatchNo']}, ${match['p2MatchNo']}, '${match['p1Streak']}', '${match['p2Streak']}'
                     ${tableTennisValues})`
             await connection.query(sql)
         } catch (error) {
@@ -90,11 +90,16 @@ export const updateMatchRecordPredictionAlt2Rev = async (matchPred: any, tableNa
 
     await connection.connect()
     const sql = `UPDATE ${tableName} SET prediction_2_rev_p1_win = ${matchPred.p1Probability}, prediction_2_rev_match_no = ${matchPred.probabilityMatchNo} WHERE id = '${matchPred.id}'`
+
+    console.log(sql)
+
     await connection.query(sql)
     await connection.end()
 }
 
-export const updateMatchRecordWinner = async (matchStatus: any, tableName: string) => {
+export const updateMatchRecordWinner = async (matchStatus: any, id: String, tableName: string) => {
+    const winner = matchStatus !== null ? matchStatus.winner : 0
+    const setScore = matchStatus !== null ? matchStatus.setScore : '0'
     const connection = new Client({
         connectionString: 'postgres://postgres:AWqasde321!@database-1.cs5ztqximrwk.ap-southeast-2.rds.amazonaws.com/tennis',
         ssl: {
@@ -103,7 +108,7 @@ export const updateMatchRecordWinner = async (matchStatus: any, tableName: strin
     })
 
     await connection.connect()
-    const sql = `UPDATE ${tableName} SET winner = ${matchStatus.winner}, set_score = '${matchStatus.setScore}' WHERE id = '${matchStatus.id}'`
+    const sql = `UPDATE ${tableName} SET winner = ${winner}, set_score = '${setScore}' WHERE id = '${id}'`
     await connection.query(sql)
     await connection.end()
 }
@@ -157,19 +162,22 @@ export const getSimilarMatchAlt2 = async (match: any, tableName: string) => {
         }
     })
 
-    let setScoreQuery = "(set_score = '0-3' or set_score = '3-0')"
+    let diffParam = `h2h_p2=${match.h2h_p2} and h2h_p1=${match.h2h_p1}`
 
     if (tableName === 'tennis_matches') {
-        setScoreQuery = "set_score like '___,___'"
+        diffParam = `l10_p2=${match.l10_p1} and l10_p1=${match.l10_p2}`
     }
 
+    const p1LastGameSetScoreRev = match.p1_last_game_set_score.split('-').reverse().join('-')
+    const p2LastGameSetScoreRev = match.p2_last_game_set_score.split('-').reverse().join('-')
 
     await connection.connect()
     const sql = `select * from ${tableName} 
-    where ${setScoreQuery}
-	    and h2h_p1=${match.h2h_p1} and h2h_p2=${match.h2h_p2}
-	    and bm_p1=${match.bm_p1} and bm_p2=${match.bm_p2}
-	    and l10_p1=${match.l10_p1} and l10_p2=${match.l10_p2}
+    where ${diffParam}
+        and p1_last_game_won=${match.p1_last_game_won} and p2_last_game_won=${match.p2_last_game_won}
+        and ( p1_last_game_set_score='${match.p1_last_game_set_score}' or p1_last_game_set_score='${p1LastGameSetScoreRev}')
+            and ( p2_last_game_set_score='${match.p2_last_game_set_score}' or p2_last_game_set_score='${p2LastGameSetScoreRev}')
+        and p1_streak='${match.p1_streak}' and p2_streak='${match.p2_streak}'
 	    and winner is not null`
 
     const result = await connection.query(sql)
@@ -186,19 +194,17 @@ export const getSimilarMatchAlt2Rev = async (match: any, tableName: string) => {
         }
     })
 
-    let setScoreQuery = "(set_score = '0-3' or set_score = '3-0')"
+    let diffParam = `h2h_p2=${match.h2h_p2} and h2h_p1=${match.h2h_p1}`
 
     if (tableName === 'tennis_matches') {
-        setScoreQuery = "set_score like '___,___'"
+        diffParam = `l10_p2=${match.l10_p1} and l10_p1=${match.l10_p2}`
     }
 
 
     await connection.connect()
     const sql = `select * from ${tableName} 
-    where ${setScoreQuery}
-	    and h2h_p2=${match.h2h_p1} and h2h_p1=${match.h2h_p2}
-	    and bm_p2=${match.bm_p1} and bm_p1=${match.bm_p2}
-	    and l10_p2=${match.l10_p1} and l10_p1=${match.l10_p2}
+    where ${diffParam}
+        and p1_streak='${match.p1_streak}' and p2_streak='${match.p2_streak}'
 	    and winner is not null`
 
     const result = await connection.query(sql)

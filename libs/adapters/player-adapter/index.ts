@@ -1,4 +1,4 @@
-import _ from "lodash"
+import _, { forEach } from "lodash"
 import TennisliveClient from '@abcfinite/tennislive-client'
 import MatchAdapter from '@abcfinite/match-adapter'
 import {
@@ -34,7 +34,7 @@ export default class PlayerAdapter {
 
     const player1Matches = await new BetapiClient().getPlayerEndedMatches(player1Id, sportEvent.type)
 
-    const match = player1Matches.find(m => m.id === sportEvent.id)
+    const match = player1Matches.events.find(m => m.id === sportEvent.id)
 
     if (match !== undefined && match !== null &&
       match.score !== undefined && match.score !== null &&
@@ -55,14 +55,20 @@ export default class PlayerAdapter {
     const player1Id = sportEvent.player1.id
     const player2Id = sportEvent.player2.id
 
-    const player1Matches = await new BetapiClient().getPlayerEndedMatches(player1Id, sportEvent.type)
-    const player2Matches = await new BetapiClient().getPlayerEndedMatches(player2Id, sportEvent.type)
+    const player1MatchesSum = await new BetapiClient().getPlayerEndedMatches(player1Id, sportEvent.type)
+    const player2MatchesSum = await new BetapiClient().getPlayerEndedMatches(player2Id, sportEvent.type)
+
+    const player1Matches = player1MatchesSum.events
+    const player2Matches = player2MatchesSum.events
 
     const player1Name = player1Matches.find(p => p.player1.id === player1Id).player1.name
     const player2Name = player2Matches.find(p => p.player1.id === player2Id).player1.name
 
     const p1L10 = player1Matches.slice(0, 10).filter(p1m => p1m.player1.id === player1Id ? p1m.player1won : !p1m.player1won).length
     const p2L10 = player2Matches.slice(0, 10).filter(p2m => p2m.player1.id === player2Id ? p2m.player1won : !p2m.player1won).length
+
+    const p1Streak = this.streakCheck(player1Matches, player1Id)
+    const p2Streak = this.streakCheck(player2Matches, player2Id)
 
     const p1Consistency = this.playerConsistency(player1Matches, player1Id)
     const p2Consistency = this.playerConsistency(player2Matches, player2Id)
@@ -154,6 +160,10 @@ export default class PlayerAdapter {
       p2L10,
       p1Consistency,
       p2Consistency,
+      p1Streak,
+      p2Streak,
+      'p1MatchNo': player1MatchesSum.matchNo,
+      'p2MatchNo': player2MatchesSum.matchNo,
       "setScore": 'waiting',
       "winner": 'waiting'
     }
@@ -219,6 +229,23 @@ export default class PlayerAdapter {
       lostWon,
       lostLost
     }
+  }
+
+  streakCheck(matches: any, playerId: string) {
+    const lastResult = matches[0].player1won && matches[0].player1.id === playerId ||
+      !matches[0].player1won && matches[0].player2.id === playerId
+    let index = 1
+    for (var i = 1; i < matches.length; i++) {
+      const matchResult = matches[i].player1won && matches[i].player1.id === playerId ||
+        !matches[i].player1won && matches[i].player2.id === playerId
+
+      if (matchResult !== lastResult) {
+        break
+      }
+      index++
+    }
+
+    return `${index}${lastResult ? 'W' : 'L'} `
   }
 
   async matchesSummaryBySportEvent(sportEvent: SportEvent) {

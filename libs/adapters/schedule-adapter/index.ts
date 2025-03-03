@@ -24,7 +24,7 @@ import { put } from "@abcfinite/dynamodb-client/src/items"
 export default class ScheduleAdapter {
 
   currentCheckDate = '11/02/2025' //esports only
-  matchNoTennis = 159
+  matchNoTennis = 217
   matchNoEsports = 35
 
   async removeAllCache() {
@@ -211,15 +211,15 @@ export default class ScheduleAdapter {
     const pendingMatchesResult = await getPendingMatchRecords(tableName)
 
     for (const match of pendingMatchesResult) {
-      const similarMatches = await getTtSimilarMatch(match, tableName)
+      // const similarMatches = await getTtSimilarMatch(match, tableName)
       const similarMatchesAlt2 = await getSimilarMatchAlt2(match, tableName)
       const similarMatchesAlt2Rev = await getSimilarMatchAlt2Rev(match, tableName)
 
-      const prediction = {
-        id: match.id,
-        p1Probability: similarMatches.length > 0 ? (similarMatches.filter(m => m.winner === '1').length / similarMatches.length).toFixed(2) : '0',
-        probabilityMatchNo: similarMatches.length,
-      }
+      // const prediction = {
+      //   id: match.id,
+      //   p1Probability: similarMatches.length > 0 ? (similarMatches.filter(m => m.winner === '1').length / similarMatches.length).toFixed(2) : '0',
+      //   probabilityMatchNo: similarMatches.length,
+      // }
 
       const predictionAlt2 = {
         id: match.id,
@@ -229,13 +229,12 @@ export default class ScheduleAdapter {
 
       const predictionAlt2Rev = {
         id: match.id,
-        p1Probability: similarMatchesAlt2Rev.length > 0 ? (similarMatchesAlt2Rev.filter(m => m.winner === '2').length / similarMatchesAlt2Rev.length).toFixed(2) : '0',
+        p1Probability: similarMatchesAlt2Rev.length > 0 ? (similarMatchesAlt2Rev.filter(m => m.winner === '1').length / similarMatchesAlt2Rev.length).toFixed(2) : '0',
         probabilityMatchNo: similarMatchesAlt2Rev.length,
       }
 
-      console.log('>>>>>prediction: ', prediction)
 
-      await updateMatchRecordPrediction(prediction, tableName)
+      // await updateMatchRecordPrediction(prediction, tableName)
       await updateMatchRecordPredictionAlt2(predictionAlt2, tableName)
       await updateMatchRecordPredictionAlt2Rev(predictionAlt2Rev, tableName)
     }
@@ -1345,8 +1344,8 @@ export default class ScheduleAdapter {
 
       console.log('>>>result ', result)
 
-      if (result !== null) {
-        await updateMatchRecordWinner(result, tableName)
+      if (result !== null || tableName === 'tennis_matches') {
+        await updateMatchRecordWinner(result, match.id, tableName)
       }
     }
 
