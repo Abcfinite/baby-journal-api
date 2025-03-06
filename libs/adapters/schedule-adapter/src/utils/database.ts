@@ -52,7 +52,7 @@ export const insertMatchRecords = async (matches: Array<any>, tableName: string)
 }
 
 
-export const updateMatchRecordPrediction = async (matchPred: any, tableName: string) => {
+export const updateMatchRecordPrediction = async (matchPred: any, l10Prediction: any, streakPrediction: any, tableName: string) => {
     const connection = new Client({
         connectionString: 'postgres://postgres:AWqasde321!@database-1.cs5ztqximrwk.ap-southeast-2.rds.amazonaws.com/tennis',
         ssl: {
@@ -61,7 +61,17 @@ export const updateMatchRecordPrediction = async (matchPred: any, tableName: str
     })
 
     await connection.connect()
-    const sql = `UPDATE ${tableName} SET prediction_p1_win = ${matchPred.p1Probability}, prediction_match_no = '${matchPred.probabilityMatchNo}' WHERE id = '${matchPred.id}'`
+    const sql = `UPDATE ${tableName} 
+        SET prediction_p1_win = ${matchPred.p1Probability}, 
+            prediction_match_no = ${matchPred.probabilityMatchNo},
+            prediction_l10_p1_win = ${l10Prediction.p1Probability},
+            prediction_l10_match_no = ${l10Prediction.probabilityMatchNo},
+            prediction_streak_p1_win = ${streakPrediction.p1Probability},
+            prediction_streak_match_no = ${streakPrediction.probabilityMatchNo}
+        WHERE id = '${matchPred.id}'`
+
+    console.log(sql)
+
     await connection.query(sql)
     await connection.end()
 }
@@ -162,23 +172,56 @@ export const getSimilarMatchAlt2 = async (match: any, tableName: string) => {
         }
     })
 
-    let diffParam = `h2h_p2=${match.h2h_p2} and h2h_p1=${match.h2h_p1}`
+    await connection.connect()
+    const sql = `SELECT * 
+        FROM table_tennis_matches
+        WHERE h2h_p1 = ${match.h2h_p1}
+            AND h2h_p2 = ${match.h2h_p2}
+            AND bm_p1 = ${match.bm_p1}
+            AND bm_p2 = ${match.bm_p2}
+	        AND winner is not null;`
 
-    if (tableName === 'tennis_matches') {
-        diffParam = `l10_p2=${match.l10_p1} and l10_p1=${match.l10_p2}`
-    }
+    const result = await connection.query(sql)
+    await connection.end()
 
-    const p1LastGameSetScoreRev = match.p1_last_game_set_score.split('-').reverse().join('-')
-    const p2LastGameSetScoreRev = match.p2_last_game_set_score.split('-').reverse().join('-')
+    return result.rows
+}
+
+export const getSimilarL10 = async (match: any, tableName: string) => {
+    const connection = new Client({
+        connectionString: 'postgres://postgres:AWqasde321!@database-1.cs5ztqximrwk.ap-southeast-2.rds.amazonaws.com/tennis',
+        ssl: {
+            rejectUnauthorized: false
+        }
+    })
 
     await connection.connect()
-    const sql = `select * from ${tableName} 
-    where ${diffParam}
-        and p1_last_game_won=${match.p1_last_game_won} and p2_last_game_won=${match.p2_last_game_won}
-        and ( p1_last_game_set_score='${match.p1_last_game_set_score}' or p1_last_game_set_score='${p1LastGameSetScoreRev}')
-            and ( p2_last_game_set_score='${match.p2_last_game_set_score}' or p2_last_game_set_score='${p2LastGameSetScoreRev}')
-        and p1_streak='${match.p1_streak}' and p2_streak='${match.p2_streak}'
-	    and winner is not null`
+    const sql = `SELECT * 
+        FROM ${tableName}
+        WHERE l10_p1 = ${match.l10_p1}
+            AND l10_p2 = ${match.l10_p2}
+            AND winner is not null;`
+
+    const result = await connection.query(sql)
+    await connection.end()
+
+    return result.rows
+}
+
+export const getSimilarStreak = async (match: any, tableName: string) => {
+    const connection = new Client({
+        connectionString: 'postgres://postgres:AWqasde321!@database-1.cs5ztqximrwk.ap-southeast-2.rds.amazonaws.com/tennis',
+        ssl: {
+            rejectUnauthorized: false
+        }
+    })
+
+    await connection.connect()
+    const sql = `SELECT * 
+        FROM ${tableName}
+        WHERE p1_streak = '${match.p1_streak}'
+            AND p2_streak = '${match.p2_streak}'
+            AND winner is not null;`
 
     const result = await connection.query(sql)
     await connection.end()
@@ -222,33 +265,14 @@ export const getTtSimilarMatch = async (match: any, tableName: string) => {
         }
     })
 
-    let tableTennisExtras = ''
-    let tableTennisExtras2 = ''
-
-    if (tableName === 'table_tennis_matches') {
-        const reverse_p1_last_game_score = match.p1_last_game_set_score.split('-').reverse().join('-')
-        const reverse_p2_last_game_score = match.p2_last_game_set_score.split('-').reverse().join('-')
-
-        tableTennisExtras = `and p1_last_game_won = ${match.p1_last_game_won}
-            and p2_last_game_won = ${match.p2_last_game_won}
-            and(p1_last_game_set_score = '${match.p1_last_game_set_score}'
-                or p1_last_game_set_score = '${reverse_p1_last_game_score}')
-            and(p2_last_game_set_score = '${match.p2_last_game_set_score}'
-                or p2_last_game_set_score = '${reverse_p2_last_game_score}')`
-    }
+    let sql = `select * from ${tableName}
+        where h2h_p2=${match.h2h_p2} and h2h_p1=${match.h2h_p1}
+            and bm_p2=${match.bm_p2} and bm_p1=${match.bm_p1}
+            and l10_p2=${match.l10_p1} and l10_p1=${match.l10_p2}
+            and p1_streak='${match.p1_streak}' and p2_streak='${match.p2_streak}'
+            and winner is not null`
 
     await connection.connect()
-    const sql = `select * from ${tableName}
-        where h2h_p1 = ${match.h2h_p1} and h2h_p2 = ${match.h2h_p2}
-            and bm_p1 = ${match.bm_p1} and bm_p2 = ${match.bm_p2}
-            and l10_p1 = ${match.l10_p1} and l10_p2 = ${match.l10_p2}
-            and p1_won_won = ${match.p1_won_won} and p2_won_won = ${match.p2_won_won}
-            and p1_won_lost = ${match.p1_won_lost} and p2_won_lost = ${match.p2_won_lost}
-            and p1_lost_won = ${match.p1_lost_won} and p2_lost_won = ${match.p2_lost_won}
-            and p1_lost_lost = ${match.p1_lost_lost} and p2_lost_lost = ${match.p2_lost_lost}
-	        ${tableTennisExtras}
-	        and winner is not null`
-
     const result = await connection.query(sql)
     await connection.end()
 

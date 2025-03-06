@@ -4,7 +4,11 @@ import { Readable } from 'stream'
 
 import { Client } from 'pg'
 import { toQuery, formatResult, prediction, probability } from './src/utils/helper'
-import { getPendingMatchRecords, getSimilarMatch, getSimilarMatchAlt2, getTtSimilarMatch, updateMatchRecordPredictionAlt2, insertMatchRecords, updateMatchRecordPrediction, updateMatchRecordWinner, getSimilarMatchAlt2Rev, updateMatchRecordPredictionAlt2Rev } from './src/utils/database'
+import {
+  getPendingMatchRecords, getSimilarMatch,
+  getSimilarMatchAlt2, getTtSimilarMatch, updateMatchRecordPredictionAlt2, insertMatchRecords, updateMatchRecordPrediction,
+  updateMatchRecordWinner, getSimilarMatchAlt2Rev, updateMatchRecordPredictionAlt2Rev, getSimilarL10, getSimilarStreak
+} from './src/utils/database'
 
 import S3ClientCustom from '@abcfinite/s3-client-custom'
 import { putItem, executeScan, executeQuery, executeQueryIndex, updateItem, removeItem } from '@abcfinite/dynamodb-client'
@@ -24,7 +28,7 @@ import { put } from "@abcfinite/dynamodb-client/src/items"
 export default class ScheduleAdapter {
 
   currentCheckDate = '11/02/2025' //esports only
-  matchNoTennis = 217
+  matchNoTennis = 285
   matchNoEsports = 35
 
   async removeAllCache() {
@@ -208,35 +212,65 @@ export default class ScheduleAdapter {
       tableName = 'tennis_matches'
     }
 
+    console.log('>>>>>getPendingMatchRecords')
     const pendingMatchesResult = await getPendingMatchRecords(tableName)
 
     for (const match of pendingMatchesResult) {
-      // const similarMatches = await getTtSimilarMatch(match, tableName)
-      const similarMatchesAlt2 = await getSimilarMatchAlt2(match, tableName)
-      const similarMatchesAlt2Rev = await getSimilarMatchAlt2Rev(match, tableName)
+      console.log('>>>>>getSimilarMatch>>>', match.id)
 
-      // const prediction = {
+      if (sport === 'table_tennis') {
+        const similarMatchesAlt2 = await getSimilarMatchAlt2(match, tableName)
+        const predictionAlt2 = {
+          id: match.id,
+          p1Probability: similarMatchesAlt2.length > 0 ? (similarMatchesAlt2.filter(m => m.winner === '1').length / similarMatchesAlt2.length).toFixed(2) : '0',
+          probabilityMatchNo: similarMatchesAlt2.length,
+        }
+        console.log('>>>>>updateMatchRecordPredictionAlt2')
+        await updateMatchRecordPredictionAlt2(predictionAlt2, tableName)
+      }
+
+      const similarMatches = await getTtSimilarMatch(match, tableName)
+
+
+      //prediction_l10_p1_win
+      const similarL10 = await getSimilarL10(match, tableName)
+
+      //prediction_streak_p1_win
+      const similarStreak = await getSimilarStreak(match, tableName)
+
+      // const similarMatchesAlt2Rev = await getSimilarMatchAlt2Rev(match, tableName)
+
+      const prediction = {
+        id: match.id,
+        p1Probability: similarMatches.length > 0 ? (similarMatches.filter(m => m.winner === '1').length / similarMatches.length).toFixed(2) : '0',
+        probabilityMatchNo: similarMatches.length,
+      }
+
+      const l10Prediction = {
+        id: match.id,
+        p1Probability: similarL10.length > 0 ? (similarL10.filter(m => m.winner === '1').length / similarL10.length).toFixed(2) : '0',
+        probabilityMatchNo: similarL10.length,
+      }
+
+      const streakPrediction = {
+        id: match.id,
+        p1Probability: similarStreak.length > 0 ? (similarStreak.filter(m => m.winner === '1').length / similarStreak.length).toFixed(2) : '0',
+        probabilityMatchNo: similarStreak.length,
+      }
+
+
+
+      // const predictionAlt2Rev = {
       //   id: match.id,
-      //   p1Probability: similarMatches.length > 0 ? (similarMatches.filter(m => m.winner === '1').length / similarMatches.length).toFixed(2) : '0',
-      //   probabilityMatchNo: similarMatches.length,
+      //   p1Probability: similarMatchesAlt2Rev.length > 0 ? (similarMatchesAlt2Rev.filter(m => m.winner === '1').length / similarMatchesAlt2Rev.length).toFixed(2) : '0',
+      //   probabilityMatchNo: similarMatchesAlt2Rev.length,
       // }
 
-      const predictionAlt2 = {
-        id: match.id,
-        p1Probability: similarMatchesAlt2.length > 0 ? (similarMatchesAlt2.filter(m => m.winner === '1').length / similarMatchesAlt2.length).toFixed(2) : '0',
-        probabilityMatchNo: similarMatchesAlt2.length,
-      }
 
-      const predictionAlt2Rev = {
-        id: match.id,
-        p1Probability: similarMatchesAlt2Rev.length > 0 ? (similarMatchesAlt2Rev.filter(m => m.winner === '1').length / similarMatchesAlt2Rev.length).toFixed(2) : '0',
-        probabilityMatchNo: similarMatchesAlt2Rev.length,
-      }
-
-
-      // await updateMatchRecordPrediction(prediction, tableName)
-      await updateMatchRecordPredictionAlt2(predictionAlt2, tableName)
-      await updateMatchRecordPredictionAlt2Rev(predictionAlt2Rev, tableName)
+      console.log('>>>>>updateMatchRecordPrediction')
+      await updateMatchRecordPrediction(prediction, l10Prediction, streakPrediction, tableName)
+      // console.log('>>>>>updateMatchRecordPredictionAlt2Rev')
+      // await updateMatchRecordPredictionAlt2Rev(predictionAlt2Rev, tableName)
     }
 
     return 'please run getPredictionsTT'
