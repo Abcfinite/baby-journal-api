@@ -52,7 +52,7 @@ export const insertMatchRecords = async (matches: Array<any>, tableName: string)
 }
 
 
-export const updateMatchRecordPrediction = async (matchPred: any, l10Prediction: any, streakPrediction: any, tableName: string) => {
+export const updateMatchRecordPrediction = async (matchPred: any, l10Prediction: any, streakPrediction: any, closestMatch: any, tableName: string) => {
     const connection = new Client({
         connectionString: 'postgres://postgres:AWqasde321!@database-1.cs5ztqximrwk.ap-southeast-2.rds.amazonaws.com/tennis',
         ssl: {
@@ -68,6 +68,8 @@ export const updateMatchRecordPrediction = async (matchPred: any, l10Prediction:
             prediction_l10_match_no = ${l10Prediction.probabilityMatchNo},
             prediction_streak_p1_win = ${streakPrediction.p1Probability},
             prediction_streak_match_no = ${streakPrediction.probabilityMatchNo}
+            prediction_distance = ${closestMatch.distance}
+            prediction_distance_winner = '${closestMatch.prediction}'
         WHERE id = '${matchPred.id}'`
 
     console.log(sql)
@@ -208,6 +210,28 @@ export const getSimilarL10 = async (match: any, tableName: string) => {
     return result.rows
 }
 
+export const getSimilarPrediction = async (prediction: any, l10Prediction: any, streakPrediction: any, tableName: string) => {
+    const connection = new Client({
+        connectionString: 'postgres://postgres:AWqasde321!@database-1.cs5ztqximrwk.ap-southeast-2.rds.amazonaws.com/tennis',
+        ssl: {
+            rejectUnauthorized: false
+        }
+    })
+
+    await connection.connect()
+    const sql = `select *
+        from table_tennis_matches
+        where prediction_2_p1_win > ${prediction.p1Probability - 0.05}
+	        and prediction_l10_p1_win > ${l10Prediction.p1Probability - 0.05}
+	        and prediction_streak_p1_win > ${streakPrediction.p1Probability - 0.05}
+	        and winner is not null;`
+
+    const result = await connection.query(sql)
+    await connection.end()
+
+    return result.rows
+}
+
 export const getSimilarStreak = async (match: any, tableName: string) => {
     const connection = new Client({
         connectionString: 'postgres://postgres:AWqasde321!@database-1.cs5ztqximrwk.ap-southeast-2.rds.amazonaws.com/tennis',
@@ -217,11 +241,11 @@ export const getSimilarStreak = async (match: any, tableName: string) => {
     })
 
     await connection.connect()
-    const sql = `SELECT * 
+    const sql = `SELECT *
         FROM ${tableName}
         WHERE p1_streak = '${match.p1_streak}'
             AND p2_streak = '${match.p2_streak}'
-            AND winner is not null;`
+            AND winner is not null; `
 
     const result = await connection.query(sql)
     await connection.end()
@@ -237,17 +261,17 @@ export const getSimilarMatchAlt2Rev = async (match: any, tableName: string) => {
         }
     })
 
-    let diffParam = `h2h_p2=${match.h2h_p2} and h2h_p1=${match.h2h_p1}`
+    let diffParam = `h2h_p2 = ${match.h2h_p2} and h2h_p1 = ${match.h2h_p1} `
 
     if (tableName === 'tennis_matches') {
-        diffParam = `l10_p2=${match.l10_p1} and l10_p1=${match.l10_p2}`
+        diffParam = `l10_p2 = ${match.l10_p1} and l10_p1 = ${match.l10_p2} `
     }
 
 
     await connection.connect()
     const sql = `select * from ${tableName} 
     where ${diffParam}
-        and p1_streak='${match.p1_streak}' and p2_streak='${match.p2_streak}'
+        and p1_streak = '${match.p1_streak}' and p2_streak = '${match.p2_streak}'
 	    and winner is not null`
 
     const result = await connection.query(sql)
@@ -266,10 +290,10 @@ export const getTtSimilarMatch = async (match: any, tableName: string) => {
     })
 
     let sql = `select * from ${tableName}
-        where h2h_p2=${match.h2h_p2} and h2h_p1=${match.h2h_p1}
-            and bm_p2=${match.bm_p2} and bm_p1=${match.bm_p1}
-            and l10_p2=${match.l10_p1} and l10_p1=${match.l10_p2}
-            and p1_streak='${match.p1_streak}' and p2_streak='${match.p2_streak}'
+        where h2h_p2 = ${match.h2h_p2} and h2h_p1 = ${match.h2h_p1}
+            and bm_p2 = ${match.bm_p2} and bm_p1 = ${match.bm_p1}
+            and l10_p2 = ${match.l10_p1} and l10_p1 = ${match.l10_p2}
+            and p1_streak = '${match.p1_streak}' and p2_streak = '${match.p2_streak}'
             and winner is not null`
 
     await connection.connect()

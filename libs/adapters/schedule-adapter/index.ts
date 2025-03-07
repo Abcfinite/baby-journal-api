@@ -7,7 +7,8 @@ import { toQuery, formatResult, prediction, probability } from './src/utils/help
 import {
   getPendingMatchRecords, getSimilarMatch,
   getSimilarMatchAlt2, getTtSimilarMatch, updateMatchRecordPredictionAlt2, insertMatchRecords, updateMatchRecordPrediction,
-  updateMatchRecordWinner, getSimilarMatchAlt2Rev, updateMatchRecordPredictionAlt2Rev, getSimilarL10, getSimilarStreak
+  updateMatchRecordWinner, getSimilarMatchAlt2Rev, updateMatchRecordPredictionAlt2Rev, getSimilarL10, getSimilarStreak,
+  getSimilarPrediction
 } from './src/utils/database'
 
 import S3ClientCustom from '@abcfinite/s3-client-custom'
@@ -258,22 +259,48 @@ export default class ScheduleAdapter {
         probabilityMatchNo: similarStreak.length,
       }
 
-
-
+      const similarPrediction = await getSimilarPrediction(prediction, l10Prediction, streakPrediction, tableName)
+      const closestMatch = this.getClosestMatch(prediction, l10Prediction, streakPrediction, similarPrediction)
       // const predictionAlt2Rev = {
       //   id: match.id,
       //   p1Probability: similarMatchesAlt2Rev.length > 0 ? (similarMatchesAlt2Rev.filter(m => m.winner === '1').length / similarMatchesAlt2Rev.length).toFixed(2) : '0',
       //   probabilityMatchNo: similarMatchesAlt2Rev.length,
       // }
 
+      console.log('>>>>closestMatch>>>', closestMatch)
+
 
       console.log('>>>>>updateMatchRecordPrediction')
-      await updateMatchRecordPrediction(prediction, l10Prediction, streakPrediction, tableName)
+      await updateMatchRecordPrediction(prediction, l10Prediction, streakPrediction, closestMatch, tableName)
       // console.log('>>>>>updateMatchRecordPredictionAlt2Rev')
       // await updateMatchRecordPredictionAlt2Rev(predictionAlt2Rev, tableName)
     }
 
     return 'please run getPredictionsTT'
+  }
+
+  getClosestMatch(prediction: any, l10Prediction: any, streakPrediction: any, similarPrediction: any) {
+    var result = {
+      distance: 1,
+      prediction: 0
+    }
+    var closestDistance = 1
+
+    for (const pred of similarPrediction) {
+      var a = prediction.p1Probability - pred['prediction_2_p1_win']
+      var b = l10Prediction.p1Probability - pred['prediction_l10_p1_win']
+      var c = streakPrediction.p1Probability - pred['prediction_streak_p1_win']
+
+      var distance = Math.sqrt(a * a + b * b + c * c)
+
+      if (distance < closestDistance) {
+        closestDistance = distance
+        result['distance'] = parseFloat(closestDistance.toFixed(2))
+        result['prediction'] = pred['winner']
+      }
+    }
+
+    return result
   }
 
   async getMatchesPredictions(sport: string) {
