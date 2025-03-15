@@ -1,6 +1,8 @@
 import _ from "lodash"
 import { parse } from 'csv-parse'
 import { Readable } from 'stream'
+import * as nodeHtmlParser from 'node-html-parser'
+
 
 import { Client } from 'pg'
 import { toQuery, formatResult, prediction, probability } from './src/utils/helper'
@@ -8,7 +10,9 @@ import {
   getPendingMatchRecords, getSimilarMatch,
   getSimilarMatchAlt2, getTtSimilarMatch, updateMatchRecordPredictionAlt2, insertMatchRecords, updateMatchRecordPrediction,
   updateMatchRecordWinner, getSimilarMatchAlt2Rev, updateMatchRecordPredictionAlt2Rev, getSimilarL10, getSimilarStreak,
-  getSimilarPrediction
+  getSimilarPrediction,
+  getDistancesPrediction,
+  getDistancesScorePrediction
 } from './src/utils/database'
 
 import S3ClientCustom from '@abcfinite/s3-client-custom'
@@ -29,7 +33,7 @@ import { put } from "@abcfinite/dynamodb-client/src/items"
 export default class ScheduleAdapter {
 
   currentCheckDate = '11/02/2025' //esports only
-  matchNoTennis = 285
+  matchNoTennis = 145
   matchNoEsports = 35
 
   async removeAllCache() {
@@ -219,19 +223,15 @@ export default class ScheduleAdapter {
     for (const match of pendingMatchesResult) {
       console.log('>>>>>getSimilarMatch>>>', match.id)
 
-      if (sport === 'table_tennis') {
-        const similarMatchesAlt2 = await getSimilarMatchAlt2(match, tableName)
-        const predictionAlt2 = {
-          id: match.id,
-          p1Probability: similarMatchesAlt2.length > 0 ? (similarMatchesAlt2.filter(m => m.winner === '1').length / similarMatchesAlt2.length).toFixed(2) : '0',
-          probabilityMatchNo: similarMatchesAlt2.length,
-        }
-        console.log('>>>>>updateMatchRecordPredictionAlt2')
-        await updateMatchRecordPredictionAlt2(predictionAlt2, tableName)
+      const similarMatchesAlt2 = await getSimilarMatchAlt2(match, tableName)
+      const predictionAlt2 = {
+        id: match.id,
+        p1Probability: similarMatchesAlt2.length > 0 ? (similarMatchesAlt2.filter(m => m.winner === '1').length / similarMatchesAlt2.length).toFixed(2) : '0',
+        probabilityMatchNo: similarMatchesAlt2.length,
       }
+      console.log('>>>>>updateMatchRecordPredictionAlt2')
 
       const similarMatches = await getTtSimilarMatch(match, tableName)
-
 
       //prediction_l10_p1_win
       const similarL10 = await getSimilarL10(match, tableName)
@@ -259,48 +259,75 @@ export default class ScheduleAdapter {
         probabilityMatchNo: similarStreak.length,
       }
 
-      const similarPrediction = await getSimilarPrediction(prediction, l10Prediction, streakPrediction, tableName)
-      const closestMatch = this.getClosestMatch(prediction, l10Prediction, streakPrediction, similarPrediction)
-      // const predictionAlt2Rev = {
-      //   id: match.id,
-      //   p1Probability: similarMatchesAlt2Rev.length > 0 ? (similarMatchesAlt2Rev.filter(m => m.winner === '1').length / similarMatchesAlt2Rev.length).toFixed(2) : '0',
-      //   probabilityMatchNo: similarMatchesAlt2Rev.length,
-      // }
+      const similarPrediction = await getSimilarPrediction(predictionAlt2, l10Prediction, streakPrediction, tableName)
+      const closestMatch = this.getClosestMatch(predictionAlt2, l10Prediction, streakPrediction, similarPrediction)
+      var distancesPrediction = null
+      var distancesH2hPrediction = null
+      var distancesScorePrediction = null
 
-      console.log('>>>>closestMatch>>>', closestMatch)
+      console.log('>>>>match.id>>>', match.id)
+      console.log(closestMatch)
+
+      if (closestMatch.length > 2 && closestMatch[0].distance > 0 &&
+        closestMatch[1].distance > 0 && closestMatch[2].distance > 0) {
+
+        console.log('>>>>>>in>>>>>')
+
+        const distancesQueryResult = await getDistancesPrediction(closestMatch, tableName)
+        distancesPrediction = {
+          id: match.id,
+          p1Probability: distancesQueryResult.length > 0 ? (distancesQueryResult.filter(m => m.winner === '1').length / distancesQueryResult.length).toFixed(2) : 0,
+          probabilityMatchNo: distancesQueryResult.length,
+        }
+
+        const distancesH2hPredictionRows = distancesQueryResult.filter(m => m.h2h_p1 === match.h2h_p1 && m.h2h_p2 === match.h2h_p2)
+
+        distancesH2hPrediction = {
+          id: match.id,
+          p1Probability: distancesH2hPredictionRows.length > 0 ? (distancesH2hPredictionRows.filter(m => m.winner === '1').length / distancesH2hPredictionRows.length).toFixed(2) : 0,
+          probabilityMatchNo: distancesH2hPredictionRows.length,
+        }
+
+        const distancesScorePredictionResult = await getDistancesScorePrediction(match, closestMatch, tableName)
+
+        distancesScorePrediction = {
+          id: match.id,
+          p1Probability: distancesScorePredictionResult.length > 0 ? (distancesScorePredictionResult.filter(m => m.winner === '1').length / distancesScorePredictionResult.length).toFixed(2) : 0,
+          probabilityMatchNo: distancesScorePredictionResult.length,
+        }
+      }
+
+      console.log('>>>>distancesPrediction>>>', distancesPrediction)
 
 
-      console.log('>>>>>updateMatchRecordPrediction')
-      await updateMatchRecordPrediction(prediction, l10Prediction, streakPrediction, closestMatch, tableName)
-      // console.log('>>>>>updateMatchRecordPredictionAlt2Rev')
-      // await updateMatchRecordPredictionAlt2Rev(predictionAlt2Rev, tableName)
+      await updateMatchRecordPrediction(predictionAlt2, prediction, l10Prediction, streakPrediction, closestMatch, distancesPrediction, distancesH2hPrediction, distancesScorePrediction, tableName)
+
     }
 
     return 'please run getPredictionsTT'
   }
 
-  getClosestMatch(prediction: any, l10Prediction: any, streakPrediction: any, similarPrediction: any) {
-    var result = {
-      distance: 1,
-      prediction: 0
-    }
-    var closestDistance = 1
+  getClosestMatch(predictionAlt2: any, l10Prediction: any, streakPrediction: any, similarPrediction: any) {
+    var neighbors = []
 
     for (const pred of similarPrediction) {
-      var a = prediction.p1Probability - pred['prediction_2_p1_win']
+      var a = predictionAlt2.p1Probability - pred['prediction_2_p1_win']
       var b = l10Prediction.p1Probability - pred['prediction_l10_p1_win']
       var c = streakPrediction.p1Probability - pred['prediction_streak_p1_win']
 
-      var distance = Math.sqrt(a * a + b * b + c * c)
+      var euclidean = Math.sqrt(a * a + b * b + c * c)
+      var manhattan = Math.abs(a) + Math.abs(b) + Math.abs(c)
+      var chebyshev = Math.max(Math.abs(a), Math.abs(b), Math.abs(c))
 
-      if (distance < closestDistance) {
-        closestDistance = distance
-        result['distance'] = parseFloat(closestDistance.toFixed(2))
-        result['prediction'] = pred['winner']
-      }
+      neighbors.push({
+        distance: parseFloat(chebyshev.toFixed(2)),
+        prediction: pred['winner'],
+        matchNo: similarPrediction.length
+      })
     }
 
-    return result
+    return neighbors.sort((a, b) => a.distance - b.distance)
+
   }
 
   async getMatchesPredictions(sport: string) {
@@ -1347,7 +1374,6 @@ export default class ScheduleAdapter {
   }
 
   async getPendingResults(sport: string) {
-
     var tableName = 'table_tennis_matches'
     if (sport === 'tennis') {
       tableName = 'tennis_matches'
@@ -1411,7 +1437,40 @@ export default class ScheduleAdapter {
     }
 
     return `${pendingMatchesResult.length} rows of ${tableName} result filled`
+  }
 
+  async getBet365TableTennisList() {
+
+
+    const s3ClientCustom = new S3ClientCustom()
+    const htmlFile = await s3ClientCustom.getFile('bet365-table-tennis', '20250315.html')
+
+    const matchGroup = []
+    const parsedMatchHtml = nodeHtmlParser.parse(htmlFile)
+
+    const markets = parsedMatchHtml.querySelectorAll('.gl-MarketGroupContainer ')
+    const teamNames = parsedMatchHtml.querySelectorAll('.rcl-ParticipantFixtureDetailsTeam_TeamName ')
+    const oddGroups = parsedMatchHtml.querySelectorAll('.sgl-MarketOddsExpand.gl-Market_General.gl-Market_General-columnheader.gl-Market_General-pwidth25 ')
+
+    console.log('>>>>markets: ', markets.length)
+    console.log('>>>>oddGroups: ', oddGroups.length)
+
+    markets.forEach((market, index) => {
+      const teamContainers = market.querySelectorAll('.rcl-ParticipantFixtureDetails_TeamAndScoresContainer')
+      matchGroup.push(teamContainers.length)
+    })
+
+    console.log('>>>>teamNames: ', teamNames.length)
+
+
+
+
+    console.log('>>>>1: ', teamNames[0].text)
+    console.log('>>>>2: ', teamNames[1].text)
+    console.log('>>>>3: ', teamNames[2].text)
+    console.log('>>>>4: ', teamNames[3].text)
+
+    return 'test'
   }
 }
 

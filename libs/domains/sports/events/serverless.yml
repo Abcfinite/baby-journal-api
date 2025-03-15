@@ -158,3 +158,10 @@ functions:
       - http:
           path: /pendingResults
           method: get
+  getBet365TableTennisList:
+    handler: index.getBet365TableTennisList
+    timeout: 900
+    events:
+      - http:
+          path: /bet365TableTennisList
+          method: get

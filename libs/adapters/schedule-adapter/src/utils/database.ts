@@ -52,7 +52,7 @@ export const insertMatchRecords = async (matches: Array<any>, tableName: string)
 }
 
 
-export const updateMatchRecordPrediction = async (matchPred: any, l10Prediction: any, streakPrediction: any, closestMatch: any, tableName: string) => {
+export const updateMatchRecordPrediction = async (predictionAlt2: any, matchPred: any, l10Prediction: any, streakPrediction: any, closestMatch: any, distancesPrediction: any, distancesH2hPrediction: any, distancesScorePrediction: any, tableName: string) => {
     const connection = new Client({
         connectionString: 'postgres://postgres:AWqasde321!@database-1.cs5ztqximrwk.ap-southeast-2.rds.amazonaws.com/tennis',
         ssl: {
@@ -64,12 +64,25 @@ export const updateMatchRecordPrediction = async (matchPred: any, l10Prediction:
     const sql = `UPDATE ${tableName} 
         SET prediction_p1_win = ${matchPred.p1Probability}, 
             prediction_match_no = ${matchPred.probabilityMatchNo},
+            prediction_2_p1_win = ${predictionAlt2.p1Probability},
+            prediction_2_match_no = ${predictionAlt2.probabilityMatchNo},
             prediction_l10_p1_win = ${l10Prediction.p1Probability},
             prediction_l10_match_no = ${l10Prediction.probabilityMatchNo},
             prediction_streak_p1_win = ${streakPrediction.p1Probability},
-            prediction_streak_match_no = ${streakPrediction.probabilityMatchNo}
-            prediction_distance = ${closestMatch.distance}
-            prediction_distance_winner = '${closestMatch.prediction}'
+            prediction_streak_match_no = ${streakPrediction.probabilityMatchNo},
+            prediction_distance = ${closestMatch.length > 0 ? closestMatch[0].distance : -1},
+            prediction_distance_2 = ${closestMatch.length > 1 ? closestMatch[1].distance : -1},
+            prediction_distance_3 = ${closestMatch.length > 2 ? closestMatch[2].distance : -1},
+            prediction_distance_winner = ${closestMatch.length > 0 ? closestMatch[0].prediction : 0},
+            prediction_distance_winner_2 = ${closestMatch.length > 1 ? closestMatch[1].prediction : 0},
+            prediction_distance_winner_3 = ${closestMatch.length > 2 ? closestMatch[2].prediction : 0},
+            prediction_distance_match_no = ${closestMatch.length},
+            prediction_distances_p1_percentage = ${distancesPrediction !== undefined && distancesPrediction !== null ? distancesPrediction.p1Probability : 0},
+            prediction_distances_p1_match_no = ${distancesPrediction !== undefined && distancesPrediction !== null ? distancesPrediction.probabilityMatchNo : 0},
+            prediction_distances_h2h_p1_percentage = ${distancesH2hPrediction !== undefined && distancesH2hPrediction !== null ? distancesH2hPrediction.p1Probability : 0},
+            prediction_distances_h2h_p1_match_no = ${distancesH2hPrediction !== undefined && distancesH2hPrediction !== null ? distancesH2hPrediction.probabilityMatchNo : 0},
+            prediction_distances_last_match_p1_percentage = ${distancesScorePrediction !== undefined && distancesScorePrediction !== null ? distancesScorePrediction.p1Probability : 0},
+            prediction_distances_last_match_p1_match_no = ${distancesScorePrediction !== undefined && distancesScorePrediction !== null ? distancesScorePrediction.probabilityMatchNo : 0}
         WHERE id = '${matchPred.id}'`
 
     console.log(sql)
@@ -210,7 +223,7 @@ export const getSimilarL10 = async (match: any, tableName: string) => {
     return result.rows
 }
 
-export const getSimilarPrediction = async (prediction: any, l10Prediction: any, streakPrediction: any, tableName: string) => {
+export const getSimilarPrediction = async (predictionAlt2: any, l10Prediction: any, streakPrediction: any, tableName: string) => {
     const connection = new Client({
         connectionString: 'postgres://postgres:AWqasde321!@database-1.cs5ztqximrwk.ap-southeast-2.rds.amazonaws.com/tennis',
         ssl: {
@@ -218,13 +231,17 @@ export const getSimilarPrediction = async (prediction: any, l10Prediction: any, 
         }
     })
 
+    if (predictionAlt2.p1Probability === '0' || l10Prediction.p1Probability === '0' || streakPrediction.p1Probability === '0') return []
+
     await connection.connect()
     const sql = `select *
         from table_tennis_matches
-        where prediction_2_p1_win > ${prediction.p1Probability - 0.05}
-	        and prediction_l10_p1_win > ${l10Prediction.p1Probability - 0.05}
-	        and prediction_streak_p1_win > ${streakPrediction.p1Probability - 0.05}
+        where prediction_2_p1_win >= ${predictionAlt2.p1Probability - 0.05} and prediction_2_p1_win <= ${parseFloat(predictionAlt2.p1Probability) + 0.05}
+	        and prediction_l10_p1_win >= ${l10Prediction.p1Probability - 0.05} and prediction_streak_p1_win <= ${parseFloat(l10Prediction.p1Probability) + 0.05}
+	        and prediction_streak_p1_win >= ${streakPrediction.p1Probability - 0.05} and prediction_streak_p1_win <= ${parseFloat(streakPrediction.p1Probability) + 0.05}
 	        and winner is not null;`
+
+    console.log(sql)
 
     const result = await connection.query(sql)
     await connection.end()
@@ -295,6 +312,56 @@ export const getTtSimilarMatch = async (match: any, tableName: string) => {
             and l10_p2 = ${match.l10_p1} and l10_p1 = ${match.l10_p2}
             and p1_streak = '${match.p1_streak}' and p2_streak = '${match.p2_streak}'
             and winner is not null`
+
+    await connection.connect()
+    const result = await connection.query(sql)
+    await connection.end()
+
+    return result.rows
+}
+
+export const getDistancesPrediction = async (closesMatch: any, tableName: string) => {
+    const connection = new Client({
+        connectionString: 'postgres://postgres:AWqasde321!@database-1.cs5ztqximrwk.ap-southeast-2.rds.amazonaws.com/tennis',
+        ssl: {
+            rejectUnauthorized: false
+        }
+    })
+
+    let sql = `select *
+        from ${tableName}
+        where prediction_distance_winner = ${closesMatch[0].prediction} and prediction_distance = ${closesMatch[0].distance}
+		    and prediction_distance_winner_2 = ${closesMatch[1].prediction} and prediction_distance_2 = ${closesMatch[1].distance}
+		    and prediction_distance_winner_3 = ${closesMatch[2].prediction} and prediction_distance_2 = ${closesMatch[2].distance}
+		    and winner is not null;`
+
+    await connection.connect()
+    const result = await connection.query(sql)
+    await connection.end()
+
+    return result.rows
+}
+
+export const getDistancesScorePrediction = async (match: any, closesMatch: any, tableName: string) => {
+    const connection = new Client({
+        connectionString: 'postgres://postgres:AWqasde321!@database-1.cs5ztqximrwk.ap-southeast-2.rds.amazonaws.com/tennis',
+        ssl: {
+            rejectUnauthorized: false
+        }
+    })
+
+    const p1LastGameSetScore = match.p1_last_game_set_score.split('-')
+    const p2LastGameSetScore = match.p2_last_game_set_score.split('-')
+
+    let sql = `select *
+        from ${tableName}
+        where winner is not null 
+	        and p1_last_game_won = ${match.p1_last_game_won} and (p1_last_game_set_score = '${match.p1_last_game_set_score}' or p1_last_game_set_score = '${p1LastGameSetScore[1]}-${p1LastGameSetScore[0]}')
+            and p2_last_game_won = ${match.p2_last_game_won} and (p2_last_game_set_score = '${match.p2_last_game_set_score}' or p2_last_game_set_score = '${p2LastGameSetScore[1]}-${p2LastGameSetScore[0]}')
+	        and prediction_distance_winner = ${closesMatch[0].prediction} 
+            and prediction_distance_winner_2 = ${closesMatch[1].prediction} 
+            and prediction_distance_winner_3 = ${closesMatch[2].prediction};
+`
 
     await connection.connect()
     const result = await connection.query(sql)
