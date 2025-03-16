@@ -1,4 +1,4 @@
-import _ from "lodash"
+import _, { add } from "lodash"
 import { parse } from 'csv-parse'
 import { Readable } from 'stream'
 import * as nodeHtmlParser from 'node-html-parser'
@@ -1441,6 +1441,8 @@ export default class ScheduleAdapter {
 
   async getBet365TableTennisList() {
 
+    const eventCollection = []
+    const flattenOdd = []
 
     const s3ClientCustom = new S3ClientCustom()
     const htmlFile = await s3ClientCustom.getFile('bet365-table-tennis', '20250315.html')
@@ -1460,15 +1462,36 @@ export default class ScheduleAdapter {
       matchGroup.push(teamContainers.length)
     })
 
+    console.log('>>>>matchGroup: ', matchGroup)
+
+    oddGroups.forEach((oddGroup, oddGroupIdx) => {
+      var addGroupChildrenIndex = 0
+      oddGroup.childNodes.forEach((odd, index) => {
+        if (odd.nodeType === 1 && odd.text.length > 1) {
+          flattenOdd[addGroupChildrenIndex] = odd.text
+          addGroupChildrenIndex++
+          flattenOdd.push(odd.text)
+        }
+      })
+    })
+
+    console.log('>>>>flattenOdd: ', flattenOdd.length)
+
     console.log('>>>>teamNames: ', teamNames.length)
 
+    var start = 0
+    matchGroup.forEach((matchGroup, oddGroupIdx) => {
+      for (var i = start; i < matchGroup * 2; i = i + 2) {
+        console.log('>>>>i: ', i)
+        const sportEvent = playerNamesToSportEvent('', '', teamNames[i].text, '', '', teamNames[i + 1].text)
+        sportEvent.player1Odd = flattenOdd[i]
+        sportEvent.player2Odd = flattenOdd[i + 2]
+        eventCollection.push(sportEvent)
+      }
+      start = matchGroup * 2
+    })
 
-
-
-    console.log('>>>>1: ', teamNames[0].text)
-    console.log('>>>>2: ', teamNames[1].text)
-    console.log('>>>>3: ', teamNames[2].text)
-    console.log('>>>>4: ', teamNames[3].text)
+    console.log('>>>>eventCollection: ', eventCollection.length)
 
     return 'test'
   }

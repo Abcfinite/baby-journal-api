@@ -8,6 +8,8 @@ export interface SportEvent {
   url: string,
   type: string,
   competitionName: string,
+  player1Odd?: number,
+  player2Odd?: number,
   player1: Player,
   player2: Player,
 }
