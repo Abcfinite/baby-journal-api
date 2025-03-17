@@ -1444,7 +1444,7 @@ export default class ScheduleAdapter {
     const eventCollection = []
 
     const s3ClientCustom = new S3ClientCustom()
-    const htmlFile = await s3ClientCustom.getFile('bet365-table-tennis', '20250316.html')
+    const htmlFile = await s3ClientCustom.getFile('bet365-table-tennis', '20250316b.html')
 
     const matchGroup = []
     const parsedMatchHtml = nodeHtmlParser.parse(htmlFile)
@@ -1452,6 +1452,7 @@ export default class ScheduleAdapter {
     const markets = parsedMatchHtml.querySelectorAll('.gl-MarketGroupContainer ')
     const teamNames = parsedMatchHtml.querySelectorAll('.rcl-ParticipantFixtureDetailsTeam_TeamName ')
     const odds = parsedMatchHtml.querySelectorAll('.sgl-ParticipantOddsOnly80_Odds').map(odd => odd.text)
+    const eventsTime = parsedMatchHtml.querySelectorAll('.rcl-ParticipantFixtureDetails_BookCloses ').map(odd => odd.text)
 
     console.log('>>>>markets: ', markets.length)
 
@@ -1462,19 +1463,21 @@ export default class ScheduleAdapter {
 
 
     console.log('>>>>odds: ', odds.length)
-    console.log('>>>>1st odd: ', odds[0])
-    console.log('>>>>2nd odd: ', odds[1])
-    console.log('>>>>3rd odd: ', odds[2])
-    console.log('>>>>4th odd: ', odds[3])
-    console.log('>>>>254 odd: ', odds[253])
-    console.log('>>>>255 odd: ', odds[254])
-    console.log('>>>>256 odd: ', odds[255])
-    console.log('>>>>257 odd: ', odds[256])
+    // console.log('>>>>1st odd: ', odds[0])
+    // console.log('>>>>2nd odd: ', odds[1])
+    // console.log('>>>>3rd odd: ', odds[2])
+    // console.log('>>>>4th odd: ', odds[3])
+    // console.log('>>>>254 odd: ', odds[253])
+    // console.log('>>>>255 odd: ', odds[254])
+    // console.log('>>>>256 odd: ', odds[255])
+    // console.log('>>>>257 odd: ', odds[256])
+
+    console.log('>>>>matchGroup: ', matchGroup)
     console.log('>>>>teamNames: ', teamNames.length)
 
     var start = 0
     var totalGroup = 0
-    matchGroup.slice(0, 2).forEach((matchNoInGroup, oddGroupIdx) => {
+    matchGroup.forEach((matchNoInGroup, oddGroupIdx) => {
 
       console.log('>>>>matchNoInGroup: ', matchNoInGroup)
       console.log('>>>>start: ', start)
@@ -1482,23 +1485,38 @@ export default class ScheduleAdapter {
       console.log('>>>>totalGroup: ', totalGroup)
 
       for (var i = start; i < totalGroup; i++) {
-        console.log('>>>>i: ', i)
+        // console.log('>>>>i: ', i)
         const sportEvent = playerNamesToSportEvent('', '', teamNames[i * 2].text, '', '', teamNames[(i * 2) + 1].text)
-        const p2Odd = odds[matchNoInGroup + i]
-        sportEvent.player1Odd = odds[i] !== undefined && odds[i] !== null ? Number(odds[i]) : 0
+        const p1Odd = oddGroupIdx === 0 ? odds[i] : odds[start + i]
+        const p2Odd = oddGroupIdx === 0 ? odds[matchNoInGroup + i] : odds[start + matchNoInGroup + i]
+        sportEvent.time = eventsTime[i]
+        sportEvent.player1Odd = p1Odd !== undefined && p1Odd !== null ? Number(p1Odd) : 0
         sportEvent.player2Odd = p2Odd !== undefined && p2Odd !== null ? Number(p2Odd) : 0
         eventCollection.push(sportEvent)
       }
-      start = matchNoInGroup
+
+      console.log('>>>>eventCollection: ', eventCollection.length)
+
+      start = eventCollection.length
     })
 
-    console.log('>>>>eventCollection: ', eventCollection.length)
 
-    eventCollection.slice(0, 4).forEach(event => {
-      console.log('>>>>event')
+    eventCollection.forEach((event, index) => {
+      console.log('>>>>event no %s', index)
       console.log('>>>>event player 1 name %s - %s ', event.player1.name, event.player1Odd)
       console.log('>>>>event player 2 name %s - %s ', event.player2.name, event.player2Odd)
     })
+
+    // const oddSafeMatches = eventCollection.filter(event => event.player1Odd >= 3.4 || event.player2Odd >= 3.4)
+
+    // console.log('>>>>addSafeMatches: ', oddSafeMatches.length)
+
+    // oddSafeMatches.forEach(event => {
+    //   console.log('>>>>event time: ', event.time)
+    //   console.log('>>>>event player 1 name %s - %s ', event.player1.name, event.player1Odd)
+    //   console.log('>>>>event player 2 name %s - %s ', event.player2.name, event.player2Odd)
+    // })
+
 
     return 'test'
   }
