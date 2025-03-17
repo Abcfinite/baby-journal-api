@@ -1442,7 +1442,6 @@ export default class ScheduleAdapter {
   async getBet365TableTennisList() {
 
     const eventCollection = []
-    const flattenOdd = []
 
     const s3ClientCustom = new S3ClientCustom()
     const htmlFile = await s3ClientCustom.getFile('bet365-table-tennis', '20250316.html')
@@ -1452,48 +1451,45 @@ export default class ScheduleAdapter {
 
     const markets = parsedMatchHtml.querySelectorAll('.gl-MarketGroupContainer ')
     const teamNames = parsedMatchHtml.querySelectorAll('.rcl-ParticipantFixtureDetailsTeam_TeamName ')
-    const oddGroups = parsedMatchHtml.querySelectorAll('.sgl-MarketOddsExpand.gl-Market_General.gl-Market_General-columnheader.gl-Market_General-pwidth25 ')
+    const odds = parsedMatchHtml.querySelectorAll('.sgl-ParticipantOddsOnly80_Odds').map(odd => odd.text)
 
     console.log('>>>>markets: ', markets.length)
-    console.log('>>>>oddGroups: ', oddGroups.length)
 
     markets.forEach((market, index) => {
       const teamContainers = market.querySelectorAll('.rcl-ParticipantFixtureDetails_TeamAndScoresContainer')
       matchGroup.push(teamContainers.length)
     })
 
-    oddGroups.forEach((oddGroup, oddGroupIdx) => {
-      var addGroupChildrenIndex = 0
-      oddGroup.childNodes.forEach((odd, index) => {
-        if (odd.nodeType === 1 && odd.text.length > 1) {
-          flattenOdd[addGroupChildrenIndex] = odd.text
-          addGroupChildrenIndex++
-          flattenOdd.push(odd.text)
-        }
-      })
-    })
 
-    console.log('>>>>flattenOdd: ', flattenOdd.length)
-
+    console.log('>>>>odds: ', odds.length)
+    console.log('>>>>1st odd: ', odds[0])
+    console.log('>>>>2nd odd: ', odds[1])
+    console.log('>>>>3rd odd: ', odds[2])
+    console.log('>>>>4th odd: ', odds[3])
+    console.log('>>>>254 odd: ', odds[253])
+    console.log('>>>>255 odd: ', odds[254])
+    console.log('>>>>256 odd: ', odds[255])
+    console.log('>>>>257 odd: ', odds[256])
     console.log('>>>>teamNames: ', teamNames.length)
 
     var start = 0
     var totalGroup = 0
-    matchGroup.forEach((matchGroup, oddGroupIdx) => {
+    matchGroup.slice(0, 2).forEach((matchNoInGroup, oddGroupIdx) => {
 
-      console.log('>>>>matchGroup: ', matchGroup)
+      console.log('>>>>matchNoInGroup: ', matchNoInGroup)
       console.log('>>>>start: ', start)
-      totalGroup += matchGroup * 2
+      totalGroup += matchNoInGroup
       console.log('>>>>totalGroup: ', totalGroup)
 
-      for (var i = start; i < totalGroup; i = i + 2) {
+      for (var i = start; i < totalGroup; i++) {
         console.log('>>>>i: ', i)
-        const sportEvent = playerNamesToSportEvent('', '', teamNames[i].text, '', '', teamNames[i + 1].text)
-        sportEvent.player1Odd = flattenOdd[i]
-        sportEvent.player2Odd = flattenOdd[i + 2]
+        const sportEvent = playerNamesToSportEvent('', '', teamNames[i * 2].text, '', '', teamNames[(i * 2) + 1].text)
+        const p2Odd = odds[matchNoInGroup + i]
+        sportEvent.player1Odd = odds[i] !== undefined && odds[i] !== null ? Number(odds[i]) : 0
+        sportEvent.player2Odd = p2Odd !== undefined && p2Odd !== null ? Number(p2Odd) : 0
         eventCollection.push(sportEvent)
       }
-      start = matchGroup * 2
+      start = matchNoInGroup
     })
 
     console.log('>>>>eventCollection: ', eventCollection.length)
