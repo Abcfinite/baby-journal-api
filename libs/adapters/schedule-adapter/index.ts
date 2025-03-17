@@ -1445,7 +1445,7 @@ export default class ScheduleAdapter {
     const flattenOdd = []
 
     const s3ClientCustom = new S3ClientCustom()
-    const htmlFile = await s3ClientCustom.getFile('bet365-table-tennis', '20250315.html')
+    const htmlFile = await s3ClientCustom.getFile('bet365-table-tennis', '20250316.html')
 
     const matchGroup = []
     const parsedMatchHtml = nodeHtmlParser.parse(htmlFile)
@@ -1461,8 +1461,6 @@ export default class ScheduleAdapter {
       const teamContainers = market.querySelectorAll('.rcl-ParticipantFixtureDetails_TeamAndScoresContainer')
       matchGroup.push(teamContainers.length)
     })
-
-    console.log('>>>>matchGroup: ', matchGroup)
 
     oddGroups.forEach((oddGroup, oddGroupIdx) => {
       var addGroupChildrenIndex = 0
@@ -1480,8 +1478,15 @@ export default class ScheduleAdapter {
     console.log('>>>>teamNames: ', teamNames.length)
 
     var start = 0
+    var totalGroup = 0
     matchGroup.forEach((matchGroup, oddGroupIdx) => {
-      for (var i = start; i < matchGroup * 2; i = i + 2) {
+
+      console.log('>>>>matchGroup: ', matchGroup)
+      console.log('>>>>start: ', start)
+      totalGroup += matchGroup * 2
+      console.log('>>>>totalGroup: ', totalGroup)
+
+      for (var i = start; i < totalGroup; i = i + 2) {
         console.log('>>>>i: ', i)
         const sportEvent = playerNamesToSportEvent('', '', teamNames[i].text, '', '', teamNames[i + 1].text)
         sportEvent.player1Odd = flattenOdd[i]
@@ -1492,6 +1497,12 @@ export default class ScheduleAdapter {
     })
 
     console.log('>>>>eventCollection: ', eventCollection.length)
+
+    eventCollection.slice(0, 4).forEach(event => {
+      console.log('>>>>event')
+      console.log('>>>>event player 1 name %s - %s ', event.player1.name, event.player1Odd)
+      console.log('>>>>event player 2 name %s - %s ', event.player2.name, event.player2Odd)
+    })
 
     return 'test'
   }
