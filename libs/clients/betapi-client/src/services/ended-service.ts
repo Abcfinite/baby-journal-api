@@ -25,10 +25,6 @@ export default class EndedService {
       return new EventParser().parse(r)
     })
 
-    // console.log('>>>>pageOneEvents')
-    // console.log(pageOneEvents)
-
-
     fullEndedEvents = fullEndedEvents.concat(pageOneEvents)
 
     if (!fullPages) {
@@ -38,22 +34,10 @@ export default class EndedService {
     }
 
     for (let page = 0; page < numberOfPageTurn; page++) {
-      // fetchPageActions.push(this.getEveryPage(page, playerId))
       fullEndedEvents = fullEndedEvents.concat(await this.getEveryPage(page, playerId, sportId))
     }
 
-
-    // console.log('>>>>fetchPageActions')
-    // console.log(fetchPageActions)
-
-    // let parsedEvents: Array<Array<Event>> = await Promise.all(fetchPageActions)
-
-    // parsedEvents.map(pe => fullEndedEvents = fullEndedEvents.concat(pe))
-
     await new CacheService().setPlayerCache(playerId, JSON.stringify(fullEndedEvents))
-
-    // console.log('>>>>fullEndedEvents')
-    // console.log(fullEndedEvents)
 
     return { matchNo: paging.total, events: fullEndedEvents }
   }

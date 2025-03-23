@@ -2,14 +2,20 @@ import PagingParser from './src/parsers/pagingParser';
 import TableTennisParser from './src/parsers/tableTennisParser';
 import HttpApiClient from '../http-api-client'
 import { Event } from './src/types/event';
+import { Odds } from './src/types/odds';
 import EventParser from './src/parsers/eventParser';
 import CacheService from './src/services/cache-service';
 import EndedService from './src/services/ended-service';
 import { EventTotal } from '@/types/eventTotal';
+import OddService from './src/services/odd-service';
 
 export default class BetapiClient {
 
   constructor() {
+  }
+
+  async getEventPrematchOdd(eventId: string): Promise<Odds> {
+    return await new OddService().getOddSummaryEventId(eventId)
   }
 
   async getPlayerEndedMatches(playerId: string, sportId: string, fullPages = false): Promise<EventTotal> {

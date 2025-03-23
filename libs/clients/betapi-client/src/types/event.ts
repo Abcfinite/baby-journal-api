@@ -1,3 +1,4 @@
+import { Odds } from "./odds"
 import { Player } from "./player"
 
 export interface Event {
@@ -5,6 +6,7 @@ export interface Event {
   time: string,
   player1: Player,
   player2: Player,
+  odds?: Odds,
   stage: string,
   score?: string,
   player1won?: boolean,

@@ -33,7 +33,7 @@ import { put } from "@abcfinite/dynamodb-client/src/items"
 export default class ScheduleAdapter {
 
   currentCheckDate = '11/02/2025' //esports only
-  matchNoTennis = 145
+  matchNoTennis = 184
   matchNoEsports = 35
 
   async removeAllCache() {
@@ -231,7 +231,7 @@ export default class ScheduleAdapter {
       }
       console.log('>>>>>updateMatchRecordPredictionAlt2')
 
-      const similarMatches = await getTtSimilarMatch(match, tableName)
+      const similarMatches = await getSimilarMatch(match, tableName)
 
       //prediction_l10_p1_win
       const similarL10 = await getSimilarL10(match, tableName)
@@ -1444,7 +1444,7 @@ export default class ScheduleAdapter {
     const eventCollection = []
 
     const s3ClientCustom = new S3ClientCustom()
-    const htmlFile = await s3ClientCustom.getFile('bet365-table-tennis', '20250316b.html')
+    const htmlFile = await s3ClientCustom.getFile('bet365-table-tennis', '20250319.html')
 
     const matchGroup = []
     const parsedMatchHtml = nodeHtmlParser.parse(htmlFile)
@@ -1484,38 +1484,50 @@ export default class ScheduleAdapter {
       totalGroup += matchNoInGroup
       console.log('>>>>totalGroup: ', totalGroup)
 
+      const now = Date.now()
+      const nowDate = new Date(now)
+
       for (var i = start; i < totalGroup; i++) {
         // console.log('>>>>i: ', i)
         const sportEvent = playerNamesToSportEvent('', '', teamNames[i * 2].text, '', '', teamNames[(i * 2) + 1].text)
         const p1Odd = oddGroupIdx === 0 ? odds[i] : odds[start + i]
         const p2Odd = oddGroupIdx === 0 ? odds[matchNoInGroup + i] : odds[start + matchNoInGroup + i]
+
+
+        if (eventsTime[i - 1] !== undefined && eventsTime[i - 1] !== null
+          && eventsTime[i - 1].split(':')[0] === '23'
+          && eventsTime[i] !== undefined && eventsTime[i] !== null
+          && eventsTime[i].split(':')[0] === '00') {
+          nowDate.setDate(nowDate.getDate() + 1)
+        }
+
+        sportEvent.date = nowDate.toLocaleString('en-GB', { timeZone: 'Australia/Sydney' })
         sportEvent.time = eventsTime[i]
+        sportEvent['dateTime'] = new Date(sportEvent.date + ' ' + sportEvent.time).getTime()
         sportEvent.player1Odd = p1Odd !== undefined && p1Odd !== null ? Number(p1Odd) : 0
         sportEvent.player2Odd = p2Odd !== undefined && p2Odd !== null ? Number(p2Odd) : 0
         eventCollection.push(sportEvent)
       }
 
-      console.log('>>>>eventCollection: ', eventCollection.length)
-
       start = eventCollection.length
     })
 
 
-    eventCollection.forEach((event, index) => {
-      console.log('>>>>event no %s', index)
-      console.log('>>>>event player 1 name %s - %s ', event.player1.name, event.player1Odd)
-      console.log('>>>>event player 2 name %s - %s ', event.player2.name, event.player2Odd)
-    })
-
-    // const oddSafeMatches = eventCollection.filter(event => event.player1Odd >= 3.4 || event.player2Odd >= 3.4)
-
-    // console.log('>>>>addSafeMatches: ', oddSafeMatches.length)
-
-    // oddSafeMatches.forEach(event => {
-    //   console.log('>>>>event time: ', event.time)
+    // eventCollection.forEach((event, index) => {
+    //   console.log('>>>>event no %s', index)
     //   console.log('>>>>event player 1 name %s - %s ', event.player1.name, event.player1Odd)
     //   console.log('>>>>event player 2 name %s - %s ', event.player2.name, event.player2Odd)
     // })
+
+    const oddSafeMatches = eventCollection.filter(event => event.player1Odd >= 3.4 || event.player2Odd >= 3.4)
+
+    console.log('>>>>addSafeMatches: ', oddSafeMatches.length)
+
+    oddSafeMatches.sort((a, b) => a.dateTime - b.dateTime).forEach(event => {
+      console.log('>>>>event date time: %s %s', event.date, event.time)
+      console.log('>>>>event player 1 name %s - %s ', event.player1.name, event.player1Odd)
+      console.log('>>>>event player 2 name %s - %s ', event.player2.name, event.player2Odd)
+    })
 
 
     return 'test'

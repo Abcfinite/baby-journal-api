@@ -88,8 +88,30 @@ export default class PlayerAdapter {
       h2hP1WonLast = h2h[0].player1.id === player1Id ? h2h[0].player1won : !h2h[0].player1won
     }
 
-    const player1Last8 = player1Matches.slice(0, 8)
-    const player2Last8 = player2Matches.slice(0, 8)
+    var player1Last8 = player1Matches.slice(0, 8)
+    var player2Last8 = player2Matches.slice(0, 8)
+
+    player1Last8 = await Promise.all(
+      player1Last8.map(async m => {
+        var odd = await new BetapiClient().getEventPrematchOdd(m.id)
+
+        console.log('>>>odd>>>>', odd)
+        m.odd = odd
+
+        return m
+      })
+    )
+
+    player2Last8 = await Promise.all(
+      player2Last8.map(async m => {
+        var odd = await new BetapiClient().getEventPrematchOdd(m.id)
+
+        console.log('>>>odd>>>>', odd)
+        m.odd = odd
+
+        return m
+      })
+    )
 
     // console.log('>>>>>>>BM')
     const player1matchesP1ids = player1Last8.map(p1l8 => p1l8.player1.id)
@@ -162,6 +184,8 @@ export default class PlayerAdapter {
       p2Consistency,
       p1Streak,
       p2Streak,
+      player1Last8,
+      player2Last8,
       'p1MatchNo': player1MatchesSum.matchNo,
       'p2MatchNo': player2MatchesSum.matchNo,
       "setScore": 'waiting',
