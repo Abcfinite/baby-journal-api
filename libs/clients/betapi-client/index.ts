@@ -8,14 +8,19 @@ import CacheService from './src/services/cache-service';
 import EndedService from './src/services/ended-service';
 import { EventTotal } from '@/types/eventTotal';
 import OddService from './src/services/odd-service';
+import { EventSummary } from '@/types/eventSummary';
 
 export default class BetapiClient {
 
   constructor() {
   }
 
-  async getEventPrematchOdd(eventId: string): Promise<Odds> {
-    return await new OddService().getOddSummaryEventId(eventId)
+  async getEventSummary(eventId: string): Promise<EventSummary> {
+    return await new EndedService().getEndedEventBasedOnEventId(eventId)
+  }
+
+  async getEventPrematchOdd(eventId: string, type: string): Promise<Odds> {
+    return await new OddService().getOddSummaryEventId(eventId, type)
   }
 
   async getPlayerEndedMatches(playerId: string, sportId: string, fullPages = false): Promise<EventTotal> {

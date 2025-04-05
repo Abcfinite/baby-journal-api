@@ -3,7 +3,7 @@ import OddParser from '../parsers/oddParser'
 import { Odds } from '../types/odds'
 
 export default class OddService {
-  getOddSummaryEventId = async (eventId: string): Promise<Odds> => {
+  getOddSummaryEventId = async (eventId: string, type: string): Promise<Odds> => {
     const httpApiClient = new HttpApiClient()
     const resultFirstPage = await httpApiClient.getNative(
       'api.b365api.com',
@@ -13,9 +13,12 @@ export default class OddService {
     )
 
     const data = JSON.parse(resultFirstPage.value.toString())
+    const startOdds = data['results']['Bet365']['odds']['start']
 
-    const odds = OddParser.parse(data['results']['Bet365']['odds']['start']['92_1'])
+    if (type === '13') {
+      return OddParser.parse(startOdds['13_1'])
+    }
 
-    return odds
+    return OddParser.parse(startOdds['92_1'])
   }
 }

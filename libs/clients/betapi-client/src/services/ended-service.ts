@@ -3,7 +3,9 @@ import PagingParser from '../parsers/pagingParser'
 import HttpApiClient from '@abcfinite/http-api-client'
 import CacheService from './cache-service'
 import { Event } from '../types/event'
+import { EventSummary } from '../types/eventSummary'
 import { EventTotal } from '@/types/eventTotal'
+import EventSummaryParser from '../parsers/eventSummaryParser'
 
 export default class EndedService {
   getEndedEventBasedOnPlayerId = async (playerId: string, sportId: string, fullPages = false): Promise<EventTotal> => {
@@ -41,6 +43,21 @@ export default class EndedService {
 
     return { matchNo: paging.total, events: fullEndedEvents }
   }
+
+  getEndedEventBasedOnEventId = async (eventId: string): Promise<EventSummary> => {
+    const httpApiClient = new HttpApiClient()
+    const result = await httpApiClient.getNative(
+      'api.b365api.com',
+      '/v1/event/history',
+      null,
+      { event_id: eventId, token: '196561-oNn4lPf9A9Hwcu' }
+    )
+
+    const data = JSON.parse(result.value.toString())
+
+    return new EventSummaryParser().parse(data['results'])
+  }
+
 
   async getEveryPage(pageNo: number, playerId: string, sportId: string) {
     const httpApiClient = new HttpApiClient()

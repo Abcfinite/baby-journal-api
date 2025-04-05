@@ -7,12 +7,8 @@ import * as nodeHtmlParser from 'node-html-parser'
 import { Client } from 'pg'
 import { toQuery, formatResult, prediction, probability } from './src/utils/helper'
 import {
-  getPendingMatchRecords, getSimilarMatch,
-  getSimilarMatchAlt2, getTtSimilarMatch, updateMatchRecordPredictionAlt2, insertMatchRecords, updateMatchRecordPrediction,
-  updateMatchRecordWinner, getSimilarMatchAlt2Rev, updateMatchRecordPredictionAlt2Rev, getSimilarL10, getSimilarStreak,
-  getSimilarPrediction,
-  getDistancesPrediction,
-  getDistancesScorePrediction
+  getPendingMatchRecords, getH2hPrevSimilarMatch, insertMatchRecords, updateMatchRecordPrediction,
+  updateMatchRecordWinner,
 } from './src/utils/database'
 
 import S3ClientCustom from '@abcfinite/s3-client-custom'
@@ -33,7 +29,7 @@ import { put } from "@abcfinite/dynamodb-client/src/items"
 export default class ScheduleAdapter {
 
   currentCheckDate = '11/02/2025' //esports only
-  matchNoTennis = 184
+  matchNoTennis = 196
   matchNoEsports = 35
 
   async removeAllCache() {
@@ -42,6 +38,7 @@ export default class ScheduleAdapter {
     await s3ClientCustom.deleteAllFiles('tennis-match-schedule')
     await s3ClientCustom.deleteAllFiles('table-tennis-match-schedule')
     await s3ClientCustom.deleteAllFiles('esports-match-schedule')
+    await s3ClientCustom.deleteAllFiles('bet365-table-tennis')
 
     const queueUrl = 'https://sqs.ap-southeast-2.amazonaws.com/146261234111/tennis-match-schedule-queue'
     const client = new SQSClient({ region: 'ap-southeast-2' });
@@ -217,29 +214,10 @@ export default class ScheduleAdapter {
       tableName = 'tennis_matches'
     }
 
-    console.log('>>>>>getPendingMatchRecords')
     const pendingMatchesResult = await getPendingMatchRecords(tableName)
 
     for (const match of pendingMatchesResult) {
-      console.log('>>>>>getSimilarMatch>>>', match.id)
-
-      const similarMatchesAlt2 = await getSimilarMatchAlt2(match, tableName)
-      const predictionAlt2 = {
-        id: match.id,
-        p1Probability: similarMatchesAlt2.length > 0 ? (similarMatchesAlt2.filter(m => m.winner === '1').length / similarMatchesAlt2.length).toFixed(2) : '0',
-        probabilityMatchNo: similarMatchesAlt2.length,
-      }
-      console.log('>>>>>updateMatchRecordPredictionAlt2')
-
-      const similarMatches = await getSimilarMatch(match, tableName)
-
-      //prediction_l10_p1_win
-      const similarL10 = await getSimilarL10(match, tableName)
-
-      //prediction_streak_p1_win
-      const similarStreak = await getSimilarStreak(match, tableName)
-
-      // const similarMatchesAlt2Rev = await getSimilarMatchAlt2Rev(match, tableName)
+      const similarMatches = await getH2hPrevSimilarMatch(match, tableName)
 
       const prediction = {
         id: match.id,
@@ -247,60 +225,7 @@ export default class ScheduleAdapter {
         probabilityMatchNo: similarMatches.length,
       }
 
-      const l10Prediction = {
-        id: match.id,
-        p1Probability: similarL10.length > 0 ? (similarL10.filter(m => m.winner === '1').length / similarL10.length).toFixed(2) : '0',
-        probabilityMatchNo: similarL10.length,
-      }
-
-      const streakPrediction = {
-        id: match.id,
-        p1Probability: similarStreak.length > 0 ? (similarStreak.filter(m => m.winner === '1').length / similarStreak.length).toFixed(2) : '0',
-        probabilityMatchNo: similarStreak.length,
-      }
-
-      const similarPrediction = await getSimilarPrediction(predictionAlt2, l10Prediction, streakPrediction, tableName)
-      const closestMatch = this.getClosestMatch(predictionAlt2, l10Prediction, streakPrediction, similarPrediction)
-      var distancesPrediction = null
-      var distancesH2hPrediction = null
-      var distancesScorePrediction = null
-
-      console.log('>>>>match.id>>>', match.id)
-      console.log(closestMatch)
-
-      if (closestMatch.length > 2 && closestMatch[0].distance > 0 &&
-        closestMatch[1].distance > 0 && closestMatch[2].distance > 0) {
-
-        console.log('>>>>>>in>>>>>')
-
-        const distancesQueryResult = await getDistancesPrediction(closestMatch, tableName)
-        distancesPrediction = {
-          id: match.id,
-          p1Probability: distancesQueryResult.length > 0 ? (distancesQueryResult.filter(m => m.winner === '1').length / distancesQueryResult.length).toFixed(2) : 0,
-          probabilityMatchNo: distancesQueryResult.length,
-        }
-
-        const distancesH2hPredictionRows = distancesQueryResult.filter(m => m.h2h_p1 === match.h2h_p1 && m.h2h_p2 === match.h2h_p2)
-
-        distancesH2hPrediction = {
-          id: match.id,
-          p1Probability: distancesH2hPredictionRows.length > 0 ? (distancesH2hPredictionRows.filter(m => m.winner === '1').length / distancesH2hPredictionRows.length).toFixed(2) : 0,
-          probabilityMatchNo: distancesH2hPredictionRows.length,
-        }
-
-        const distancesScorePredictionResult = await getDistancesScorePrediction(match, closestMatch, tableName)
-
-        distancesScorePrediction = {
-          id: match.id,
-          p1Probability: distancesScorePredictionResult.length > 0 ? (distancesScorePredictionResult.filter(m => m.winner === '1').length / distancesScorePredictionResult.length).toFixed(2) : 0,
-          probabilityMatchNo: distancesScorePredictionResult.length,
-        }
-      }
-
-      console.log('>>>>distancesPrediction>>>', distancesPrediction)
-
-
-      await updateMatchRecordPrediction(predictionAlt2, prediction, l10Prediction, streakPrediction, closestMatch, distancesPrediction, distancesH2hPrediction, distancesScorePrediction, tableName)
+      await updateMatchRecordPrediction(prediction, tableName)
 
     }
 
@@ -742,6 +667,7 @@ export default class ScheduleAdapter {
     const resultFile = await s3ClientCustom.getFile('tennis-match-schedule', 'result.json')
 
     if (resultFile) {
+      insertMatchRecords(JSON.parse(resultFile), 'tennis_matches')
       return toTTCsv(resultFile)
     }
 
@@ -936,9 +862,15 @@ export default class ScheduleAdapter {
 
     var requestResult = 'error'
     const resultFile = await s3ClientCustom.getFile('table-tennis-match-schedule', 'result.json')
+    // const scheduleFile = await s3ClientCustom.getFile('bet365-table-tennis', 'schedule.json')
 
     if (resultFile) {
+
+      console.log('>>>>oddsData>>>>')
+      // console.log(JSON.parse(scheduleFile))
+
       await insertMatchRecords(JSON.parse(resultFile), 'table_tennis_matches')
+      // await insertMatchRecords(JSON.parse(resultFile), 'table_tennis_matches', JSON.parse(scheduleFile))
       await s3ClientCustom.deleteAllFiles('table-tennis-match-schedule')
       return toTTCsv(resultFile)
     }
@@ -1444,7 +1376,7 @@ export default class ScheduleAdapter {
     const eventCollection = []
 
     const s3ClientCustom = new S3ClientCustom()
-    const htmlFile = await s3ClientCustom.getFile('bet365-table-tennis', '20250319.html')
+    const htmlFile = await s3ClientCustom.getFile('bet365-table-tennis', 'table-tennis.html')
 
     const matchGroup = []
     const parsedMatchHtml = nodeHtmlParser.parse(htmlFile)
@@ -1461,17 +1393,7 @@ export default class ScheduleAdapter {
       matchGroup.push(teamContainers.length)
     })
 
-
     console.log('>>>>odds: ', odds.length)
-    // console.log('>>>>1st odd: ', odds[0])
-    // console.log('>>>>2nd odd: ', odds[1])
-    // console.log('>>>>3rd odd: ', odds[2])
-    // console.log('>>>>4th odd: ', odds[3])
-    // console.log('>>>>254 odd: ', odds[253])
-    // console.log('>>>>255 odd: ', odds[254])
-    // console.log('>>>>256 odd: ', odds[255])
-    // console.log('>>>>257 odd: ', odds[256])
-
     console.log('>>>>matchGroup: ', matchGroup)
     console.log('>>>>teamNames: ', teamNames.length)
 
@@ -1488,7 +1410,6 @@ export default class ScheduleAdapter {
       const nowDate = new Date(now)
 
       for (var i = start; i < totalGroup; i++) {
-        // console.log('>>>>i: ', i)
         const sportEvent = playerNamesToSportEvent('', '', teamNames[i * 2].text, '', '', teamNames[(i * 2) + 1].text)
         const p1Odd = oddGroupIdx === 0 ? odds[i] : odds[start + i]
         const p2Odd = oddGroupIdx === 0 ? odds[matchNoInGroup + i] : odds[start + matchNoInGroup + i]
@@ -1519,16 +1440,18 @@ export default class ScheduleAdapter {
     //   console.log('>>>>event player 2 name %s - %s ', event.player2.name, event.player2Odd)
     // })
 
-    const oddSafeMatches = eventCollection.filter(event => event.player1Odd >= 3.4 || event.player2Odd >= 3.4)
+    // const oddSafeMatches = eventCollection.filter(event => event.player1Odd >= 3.4 || event.player2Odd >= 3.4)
 
-    console.log('>>>>addSafeMatches: ', oddSafeMatches.length)
+    // console.log('>>>>addSafeMatches: ', oddSafeMatches.length)
 
-    oddSafeMatches.sort((a, b) => a.dateTime - b.dateTime).forEach(event => {
-      console.log('>>>>event date time: %s %s', event.date, event.time)
-      console.log('>>>>event player 1 name %s - %s ', event.player1.name, event.player1Odd)
-      console.log('>>>>event player 2 name %s - %s ', event.player2.name, event.player2Odd)
-    })
+    // oddSafeMatches.sort((a, b) => a.dateTime - b.dateTime).forEach(event => {
+    //   console.log('>>>>event date time: %s %s', event.date, event.time)
+    //   console.log('>>>>event player 1 name %s - %s ', event.player1.name, event.player1Odd)
+    //   console.log('>>>>event player 2 name %s - %s ', event.player2.name, event.player2Odd)
+    // })
 
+    await new S3ClientCustom()
+      .putFile('bet365-table-tennis', 'schedule.json', JSON.stringify(eventCollection))
 
     return 'test'
   }

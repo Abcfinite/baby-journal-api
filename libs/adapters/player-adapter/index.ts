@@ -55,6 +55,7 @@ export default class PlayerAdapter {
     const player1Id = sportEvent.player1.id
     const player2Id = sportEvent.player2.id
 
+    // const currentH2h = await new BetapiClient().getEventSummary(sportEvent.id)
     const player1MatchesSum = await new BetapiClient().getPlayerEndedMatches(player1Id, sportEvent.type)
     const player2MatchesSum = await new BetapiClient().getPlayerEndedMatches(player2Id, sportEvent.type)
 
@@ -93,9 +94,8 @@ export default class PlayerAdapter {
 
     player1Last8 = await Promise.all(
       player1Last8.map(async m => {
-        var odd = await new BetapiClient().getEventPrematchOdd(m.id)
+        var odd = await new BetapiClient().getEventPrematchOdd(m.id, sportEvent.type)
 
-        console.log('>>>odd>>>>', odd)
         m.odd = odd
 
         return m
@@ -104,9 +104,8 @@ export default class PlayerAdapter {
 
     player2Last8 = await Promise.all(
       player2Last8.map(async m => {
-        var odd = await new BetapiClient().getEventPrematchOdd(m.id)
+        var odd = await new BetapiClient().getEventPrematchOdd(m.id, sportEvent.type)
 
-        console.log('>>>odd>>>>', odd)
         m.odd = odd
 
         return m
@@ -163,6 +162,32 @@ export default class PlayerAdapter {
     const h2hP2 = h2hNo - h2hP1Won
     const h2hLastWinner = h2hP1WonLast ? 1 : 2
 
+    const oddP1WinA = player1Last8.filter(p1l8 => p1l8.player1.id === player1Id && p1l8.player1won).map(p1l8 => p1l8.odd.prematchOddP1)
+    const oddP1WinB = player1Last8.filter(p1l8 => p1l8.player1.id !== player1Id && !p1l8.player1won).map(p1l8 => p1l8.odd.prematchOddP2)
+    const oddP1LostA = player1Last8.filter(p1l8 => p1l8.player1.id === player1Id && !p1l8.player1won).map(p1l8 => p1l8.odd.prematchOddP1)
+    const oddP1LostB = player1Last8.filter(p1l8 => p1l8.player1.id !== player1Id && p1l8.player1won).map(p1l8 => p1l8.odd.prematchOddP2)
+    const oddP1Winlowest = Math.max(...oddP1WinA, ...oddP1WinB)
+    const oddP1LostHighest = Math.min(...oddP1LostA, ...oddP1LostB)
+
+    const oddP2WinA = player2Last8.filter(p2l8 => p2l8.player1.id === player2Id && p2l8.player1won).map(p2l8 => p2l8.odd.prematchOddP1)
+    const oddP2WinB = player2Last8.filter(p2l8 => p2l8.player1.id !== player2Id && !p2l8.player1won).map(p2l8 => p2l8.odd.prematchOddP2)
+    const oddP2LostA = player2Last8.filter(p2l8 => p2l8.player1.id === player2Id && !p2l8.player1won).map(p2l8 => p2l8.odd.prematchOddP1)
+    const oddP2LostB = player2Last8.filter(p2l8 => p2l8.player1.id !== player2Id && p2l8.player1won).map(p2l8 => p2l8.odd.prematchOddP2)
+    const oddP2Winlowest = Math.max(...oddP2WinA, ...oddP2WinB)
+    const oddP2LostHighest = Math.min(...oddP2LostA, ...oddP2LostB)
+
+    const p1LastGameOdd = player1Matches[0].player1.id === player1Id ? player1Matches[0].odd.prematchOddP1 : player1Matches[0].odd.prematchOddP2
+    const p2LastGameOdd = player2Matches[0].player1.id === player2Id ? player2Matches[0].odd.prematchOddP1 : player2Matches[0].odd.prematchOddP2
+
+    var p1LastGameEventSummary = await new BetapiClient().getEventSummary(player1Matches[0].id)
+    var p2LastGameEventSummary = await new BetapiClient().getEventSummary(player2Matches[0].id)
+
+    const p1PrevH2h = p1LastGameEventSummary.p1Id === player1Id ? p1LastGameEventSummary.h2hP1 : p1LastGameEventSummary.h2hP2
+    const p1PrevH2hV = p1LastGameEventSummary.p2Id === player1Id ? p1LastGameEventSummary.h2hP2 : p1LastGameEventSummary.h2hP1
+
+    const p2PrevH2h = p2LastGameEventSummary.p1Id === player1Id ? p2LastGameEventSummary.h2hP1 : p2LastGameEventSummary.h2hP2
+    const p2PrevH2hV = p2LastGameEventSummary.p2Id === player1Id ? p2LastGameEventSummary.h2hP2 : p2LastGameEventSummary.h2hP1
+
     const result = {
       "id": sportEvent.id,
       "date": sportEvent.date,
@@ -171,6 +196,8 @@ export default class PlayerAdapter {
       "p2Id": player2Id,
       "p1Name": player1Name,
       "p2Name": player2Name,
+      "p1Odd": 0,
+      "p2Odd": 0,
       "h2hP1": h2hP1Won,
       h2hP2,
       h2hLastWinner,
@@ -186,6 +213,16 @@ export default class PlayerAdapter {
       p2Streak,
       player1Last8,
       player2Last8,
+      oddP1Winlowest,
+      oddP1LostHighest,
+      oddP2Winlowest,
+      oddP2LostHighest,
+      p1LastGameOdd,
+      p2LastGameOdd,
+      p1PrevH2h,
+      p1PrevH2hV,
+      p2PrevH2h,
+      p2PrevH2hV,
       'p1MatchNo': player1MatchesSum.matchNo,
       'p2MatchNo': player2MatchesSum.matchNo,
       "setScore": 'waiting',
