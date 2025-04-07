@@ -15,8 +15,12 @@ export default class BetapiClient {
   constructor() {
   }
 
-  async getEventSummary(eventId: string): Promise<EventSummary> {
-    return await new EndedService().getEndedEventBasedOnEventId(eventId)
+  async getEventSummary(eventId: string, pId: string): Promise<EventSummary> {
+    return await new EndedService().getEndedEventBasedOnEventId(eventId, pId)
+  }
+
+  async getPrematchOddEventId(eventId: string): Promise<Odds> {
+    return await new OddService().getPrematchOddEventId(eventId)
   }
 
   async getEventPrematchOdd(eventId: string, type: string): Promise<Odds> {
@@ -62,6 +66,51 @@ export default class BetapiClient {
 
 
     await new CacheService().setEventCache(sportId, JSON.stringify(fullIncomingEvents))
+
+    return fullIncomingEvents
+  }
+
+  async getBet365Events(sportId: string): Promise<Array<Event>> {
+    const eventCache = await new CacheService().getBet365EventCache(sportId)
+
+    if (eventCache !== null && eventCache !== undefined) {
+      return JSON.parse(eventCache)
+    }
+
+    const httpApiClient = new HttpApiClient()
+
+    const result = await httpApiClient.getNative(
+      'api.b365api.com',
+      '/v1/bet365/upcoming',
+      null,
+      { sport_id: sportId, token: '196561-oNn4lPf9A9Hwcu' }
+    )
+
+    let fullIncomingEvents: Array<Event> = []
+
+    const data = JSON.parse(result.value.toString())
+    const paging = PagingParser.parse(data['pager'])
+    const numberOfPageTurn = Math.floor(paging.total / paging.perPage)
+
+    const pageOneEvents = data['results'].map(r => {
+
+      // console.log('>>>bet365 event')
+      // console.log(r)
+
+      return new EventParser().parse(r)
+    })
+
+    fullIncomingEvents = fullIncomingEvents.concat(pageOneEvents)
+
+
+    for (let page = 0; page < numberOfPageTurn; page++) {
+      fullIncomingEvents = fullIncomingEvents.concat(await this.getEveryPage(page, sportId))
+    }
+
+    // console.log('>>>bet365 fullIncomingEvents')
+    // console.log(fullIncomingEvents)
+
+    await new CacheService().setBet365EventCache(sportId, JSON.stringify(fullIncomingEvents))
 
     return fullIncomingEvents
   }

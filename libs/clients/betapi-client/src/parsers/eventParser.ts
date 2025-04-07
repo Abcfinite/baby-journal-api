@@ -19,6 +19,7 @@ export default class EventParser {
 
     return {
       id: _.get(event, 'id', ''),
+      secondaryId: _.get(event, 'our_event_id', ''),
       time: _.get(event, 'time', ''),
       player1: homePlayerData,
       player2: awayPlayerData,

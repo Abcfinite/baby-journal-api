@@ -2,6 +2,7 @@ import { Player } from "./player"
 
 export interface SportEvent {
   id: string,
+  bet365EventId?: string,
   date: string,
   time: string,
   stage: string,

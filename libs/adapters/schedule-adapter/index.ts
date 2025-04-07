@@ -7,7 +7,8 @@ import * as nodeHtmlParser from 'node-html-parser'
 import { Client } from 'pg'
 import { toQuery, formatResult, prediction, probability } from './src/utils/helper'
 import {
-  getPendingMatchRecords, getH2hPrevSimilarMatch, insertMatchRecords, updateMatchRecordPrediction,
+  getPendingMatchRecords, getH2hPrevSimilarMatch, getH2hPrevV1SimilarMatch,
+  insertMatchRecords, updateMatchRecordPrediction,
   updateMatchRecordWinner,
 } from './src/utils/database'
 
@@ -122,6 +123,7 @@ export default class ScheduleAdapter {
   }
 
   async cacheTableTennisBetAPI() {
+    await new BetapiClient().getBet365Events('92')
     const events = await new BetapiClient().getEvents('92')
 
     return events.length
@@ -218,6 +220,7 @@ export default class ScheduleAdapter {
 
     for (const match of pendingMatchesResult) {
       const similarMatches = await getH2hPrevSimilarMatch(match, tableName)
+      const prevH2hMatchesV1 = await getH2hPrevV1SimilarMatch(match, tableName)
 
       const prediction = {
         id: match.id,
@@ -225,7 +228,13 @@ export default class ScheduleAdapter {
         probabilityMatchNo: similarMatches.length,
       }
 
-      await updateMatchRecordPrediction(prediction, tableName)
+      const predH2hV1 = {
+        id: match.id,
+        p1Probability: prevH2hMatchesV1.length > 0 ? (prevH2hMatchesV1.filter(m => m.winner === '1').length / prevH2hMatchesV1.length).toFixed(2) : '0',
+        probabilityMatchNo: prevH2hMatchesV1.length,
+      }
+
+      await updateMatchRecordPrediction(prediction, predH2hV1, tableName)
 
     }
 
@@ -866,7 +875,7 @@ export default class ScheduleAdapter {
 
     if (resultFile) {
 
-      console.log('>>>>oddsData>>>>')
+      // console.log('>>>>oddsData>>>>')
       // console.log(JSON.parse(scheduleFile))
 
       await insertMatchRecords(JSON.parse(resultFile), 'table_tennis_matches')
@@ -878,6 +887,7 @@ export default class ScheduleAdapter {
     const queueUrl = 'https://sqs.ap-southeast-2.amazonaws.com/146261234111/table-tennis-match-schedule-queue'
     const client = new SQSClient({ region: 'ap-southeast-2' });
 
+    const bet365Events = await new BetapiClient().getBet365Events('92')
     const events = await new BetapiClient().getEvents('92')
 
     const sportEvents = []
@@ -903,7 +913,7 @@ export default class ScheduleAdapter {
 
         const now = Date.now()
         const checkStart = new Date(now)
-        checkStart.setMinutes(checkStart.getMinutes() + 5)
+        checkStart.setMinutes(checkStart.getMinutes() + 15)
         const checkEnd = new Date(now)
         checkEnd.setMinutes(checkEnd.getMinutes() + 35)
         if ((parseInt(event.time) * 1000) < checkStart.getTime() ||
@@ -911,8 +921,12 @@ export default class ScheduleAdapter {
           continue
         }
 
+
+        const bet365Event = bet365Events.find(e => e.secondaryId === event.id)
+
         const sportEvent = {
           id: event.id,
+          bet365EventId: bet365Event?.id,
           date: eventDateTime.split(',')[0].trim(),
           time: eventDateTime.split(',')[1].trim(),
           stage: '',
@@ -955,7 +969,6 @@ export default class ScheduleAdapter {
           }
         }
 
-
         sportEvents.push(sportEvent)
       }
     }
@@ -971,10 +984,6 @@ export default class ScheduleAdapter {
       await new S3ClientCustom()
         .putFile('table-tennis-match-schedule', 'number.txt', `${sportEvents.length}`)
     }
-
-    // console.log('>>>>sqsMessageNumber: ', sqsMessageNumber)
-    // console.log('>>>>matchNoTT: ', matchNoTT)
-    // console.log('>>>>fileList.length: ', fileList.length - 1)
 
     if (sqsMessageNumber === 0 && matchNoTT === (fileList.length - 1)) {
       await Promise.all(
@@ -1003,7 +1012,7 @@ export default class ScheduleAdapter {
       await new S3ClientCustom()
         .putFile('table-tennis-match-schedule', 'result.json', JSON.stringify(fileContent))
 
-      insertMatchRecords(fileContent, 'table_tennis_matches')
+      // insertMatchRecords(fileContent, 'table_tennis_matches')
 
       return fileContent
     }

@@ -3,6 +3,7 @@ import { Player } from "./player"
 
 export interface Event {
   id: string,
+  secondaryId?: string,
   time: string,
   player1: Player,
   player2: Player,

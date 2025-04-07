@@ -2,24 +2,26 @@ import _ from 'lodash'
 import { EventSummary } from '../types/eventSummary'
 
 export default class EventSummaryParser {
-    parse(event?: object): EventSummary {
-        const p1Id = _.get(event, 'h2h[0].home.id', '')
-        const p2Id = _.get(event, 'h2h[0].away.id', '')
+    parse(pId: string, event?: object): EventSummary {
 
-        const scores = _.get(event, 'h2h', []).map((e: any) => e.ss)
+        var h2hP1 = 0
 
-        const h2hP1 = scores.map(score => {
-            const p1Set = score.split(',')[0].split('-')[0]
-            const p2Set = score.split(',')[0].split('-')[1]
+        _.get(event, 'h2h', []).forEach(h2h => {
+            const h2hSS = _.get(h2h, 'ss', '')
+            const h2hPart1 = h2hSS.split('-')[0]
+            const h2hPart2 = h2hSS.split('-')[1]
+            if (h2h.home.id === pId && h2hPart1 > h2hPart2) {
+                h2hP1++
+            }
 
-            return p1Set > p2Set ? 1 : 0
-        }).reduce((a, b) => a + b, 0)
+            if (h2h.away.id === pId && h2hPart2 > h2hPart1) {
+                h2hP1++
+            }
+        })
 
-        const h2hP2 = scores.length - h2hP1
+        const h2hP2 = _.get(event, 'h2h', []).length - h2hP1
 
         return {
-            p1Id,
-            p2Id,
             h2hP1,
             h2hP2
         }

@@ -59,6 +59,11 @@ export default class PlayerAdapter {
     const player1MatchesSum = await new BetapiClient().getPlayerEndedMatches(player1Id, sportEvent.type)
     const player2MatchesSum = await new BetapiClient().getPlayerEndedMatches(player2Id, sportEvent.type)
 
+    var prematchOdds = null
+    if (sportEvent.bet365EventId) {
+      prematchOdds = await new BetapiClient().getPrematchOddEventId(sportEvent.bet365EventId)
+    }
+
     const player1Matches = player1MatchesSum.events
     const player2Matches = player2MatchesSum.events
 
@@ -81,7 +86,7 @@ export default class PlayerAdapter {
     let h2hP1WonLast
 
     if (h2hAll.length !== 0) {
-      const h2h = h2hAll.splice(0, 8)
+      const h2h = h2hAll.splice(0, 10)
 
       h2hNo = h2h.length
       h2hP1Won = h2h.filter(h => (h.player1.id === player1Id && h.player1won) || (h.player2.id === player1Id && !h.player1won)).length
@@ -179,14 +184,14 @@ export default class PlayerAdapter {
     const p1LastGameOdd = player1Matches[0].player1.id === player1Id ? player1Matches[0].odd.prematchOddP1 : player1Matches[0].odd.prematchOddP2
     const p2LastGameOdd = player2Matches[0].player1.id === player2Id ? player2Matches[0].odd.prematchOddP1 : player2Matches[0].odd.prematchOddP2
 
-    var p1LastGameEventSummary = await new BetapiClient().getEventSummary(player1Matches[0].id)
-    var p2LastGameEventSummary = await new BetapiClient().getEventSummary(player2Matches[0].id)
+    var p1LastGameEventSummary = await new BetapiClient().getEventSummary(player1Matches[0].id, player1Id)
+    var p2LastGameEventSummary = await new BetapiClient().getEventSummary(player2Matches[0].id, player2Id)
 
     const p1PrevH2h = p1LastGameEventSummary.p1Id === player1Id ? p1LastGameEventSummary.h2hP1 : p1LastGameEventSummary.h2hP2
     const p1PrevH2hV = p1LastGameEventSummary.p2Id === player1Id ? p1LastGameEventSummary.h2hP2 : p1LastGameEventSummary.h2hP1
 
-    const p2PrevH2h = p2LastGameEventSummary.p1Id === player1Id ? p2LastGameEventSummary.h2hP1 : p2LastGameEventSummary.h2hP2
-    const p2PrevH2hV = p2LastGameEventSummary.p2Id === player1Id ? p2LastGameEventSummary.h2hP2 : p2LastGameEventSummary.h2hP1
+    const p2PrevH2h = p2LastGameEventSummary.p1Id === player2Id ? p2LastGameEventSummary.h2hP1 : p2LastGameEventSummary.h2hP2
+    const p2PrevH2hV = p2LastGameEventSummary.p2Id === player2Id ? p2LastGameEventSummary.h2hP2 : p2LastGameEventSummary.h2hP1
 
     const result = {
       "id": sportEvent.id,
@@ -223,6 +228,7 @@ export default class PlayerAdapter {
       p1PrevH2hV,
       p2PrevH2h,
       p2PrevH2hV,
+      prematchOdds,
       'p1MatchNo': player1MatchesSum.matchNo,
       'p2MatchNo': player2MatchesSum.matchNo,
       "setScore": 'waiting',

@@ -44,7 +44,7 @@ export default class EndedService {
     return { matchNo: paging.total, events: fullEndedEvents }
   }
 
-  getEndedEventBasedOnEventId = async (eventId: string): Promise<EventSummary> => {
+  getEndedEventBasedOnEventId = async (eventId: string, pId: string): Promise<EventSummary> => {
     const httpApiClient = new HttpApiClient()
     const result = await httpApiClient.getNative(
       'api.b365api.com',
@@ -55,7 +55,7 @@ export default class EndedService {
 
     const data = JSON.parse(result.value.toString())
 
-    return new EventSummaryParser().parse(data['results'])
+    return new EventSummaryParser().parse(pId, data['results'])
   }
 
 
