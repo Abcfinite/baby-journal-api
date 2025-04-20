@@ -60,9 +60,9 @@ export default class PlayerAdapter {
     const player2MatchesSum = await new BetapiClient().getPlayerEndedMatches(player2Id, sportEvent.type)
 
     var prematchOdds = null
-    if (sportEvent.bet365EventId) {
-      prematchOdds = await new BetapiClient().getPrematchOddEventId(sportEvent.bet365EventId)
-    }
+    // if (sportEvent.bet365EventId) {
+    //   prematchOdds = await new BetapiClient().getPrematchOddEventId(sportEvent.bet365EventId)
+    // }
 
     const player1Matches = player1MatchesSum.events
     const player2Matches = player2MatchesSum.events
@@ -99,9 +99,14 @@ export default class PlayerAdapter {
 
     player1Last8 = await Promise.all(
       player1Last8.map(async m => {
-        var odd = await new BetapiClient().getEventPrematchOdd(m.id, sportEvent.type)
+        const odd = await new BetapiClient().getEventPrematchOdd(m.id, sportEvent.type)
+        const matchSummary = await new BetapiClient().getEventSummary(m.id, player1Id)
 
         m.odd = odd
+        m.h2hP1 = matchSummary.h2hP1
+        m.h2hP2 = matchSummary.h2hP2
+        m.l10P1 = matchSummary.l10P1
+        m.l10P2 = matchSummary.l10P2
 
         return m
       })
@@ -109,9 +114,14 @@ export default class PlayerAdapter {
 
     player2Last8 = await Promise.all(
       player2Last8.map(async m => {
-        var odd = await new BetapiClient().getEventPrematchOdd(m.id, sportEvent.type)
+        const odd = await new BetapiClient().getEventPrematchOdd(m.id, sportEvent.type)
+        const matchSummary = await new BetapiClient().getEventSummary(m.id, player2Id)
 
         m.odd = odd
+        m.h2hP1 = matchSummary.h2hP1
+        m.h2hP2 = matchSummary.h2hP2
+        m.l10P1 = matchSummary.l10P1
+        m.l10P2 = matchSummary.l10P2
 
         return m
       })
@@ -181,17 +191,81 @@ export default class PlayerAdapter {
     const oddP2Winlowest = Math.max(...oddP2WinA, ...oddP2WinB)
     const oddP2LostHighest = Math.min(...oddP2LostA, ...oddP2LostB)
 
-    const p1LastGameOdd = player1Matches[0].player1.id === player1Id ? player1Matches[0].odd.prematchOddP1 : player1Matches[0].odd.prematchOddP2
-    const p2LastGameOdd = player2Matches[0].player1.id === player2Id ? player2Matches[0].odd.prematchOddP1 : player2Matches[0].odd.prematchOddP2
+    const p1LastGameOdd = player1Last8[0].player1.id === player1Id ? player1Last8[0].odd.prematchOddP1 : player1Last8[0].odd.prematchOddP2
+    const p2LastGameOdd = player2Last8[0].player1.id === player2Id ? player2Last8[0].odd.prematchOddP1 : player2Last8[0].odd.prematchOddP2
 
-    var p1LastGameEventSummary = await new BetapiClient().getEventSummary(player1Matches[0].id, player1Id)
-    var p2LastGameEventSummary = await new BetapiClient().getEventSummary(player2Matches[0].id, player2Id)
+    // var p1LastGameEventSummary = await new BetapiClient().getEventSummary(player1Matches[0].id, player1Id)
+    // var p2LastGameEventSummary = await new BetapiClient().getEventSummary(player2Matches[0].id, player2Id)
 
-    const p1PrevH2h = p1LastGameEventSummary.p1Id === player1Id ? p1LastGameEventSummary.h2hP1 : p1LastGameEventSummary.h2hP2
-    const p1PrevH2hV = p1LastGameEventSummary.p2Id === player1Id ? p1LastGameEventSummary.h2hP2 : p1LastGameEventSummary.h2hP1
+    // const p1PrevH2h = p1LastGameEventSummary.h2hP1
+    // const p1PrevH2hV = p1LastGameEventSummary.h2hP2
 
-    const p2PrevH2h = p2LastGameEventSummary.p1Id === player2Id ? p2LastGameEventSummary.h2hP1 : p2LastGameEventSummary.h2hP2
-    const p2PrevH2hV = p2LastGameEventSummary.p2Id === player2Id ? p2LastGameEventSummary.h2hP2 : p2LastGameEventSummary.h2hP1
+    // const p2PrevH2h = p2LastGameEventSummary.h2hP1
+    // const p2PrevH2hV = p2LastGameEventSummary.h2hP2
+
+    const p1PrevH2h = player1Last8[0].h2hP1
+    const p1PrevH2hV = player1Last8[0].h2hP2
+
+    const p2PrevH2h = player2Last8[0].h2hP1
+    const p2PrevH2hV = player2Last8[0].h2hP2
+
+    const p1L10HistoryArray = player1Last8.map(p1m => `${p1m.l10P1} v ${p1m.l10P2} : ${p1m.player1.id === player1Id ? p1m.player1won : !p1m.player1won}`)
+    const p1L10History = p1L10HistoryArray.filter(p1l => p1l !== undefined && p1l !== null).join(',')
+
+    const p2L10HistoryArray = player2Last8.map(p2m => `${p2m.l10P1} v ${p2m.l10P2} : ${p2m.player1.id === player2Id ? p2m.player1won : !p2m.player1won}`)
+    const p2L10History = p2L10HistoryArray.filter(p2l => p2l !== undefined && p2l !== null).join(',')
+
+    const p1H2historyArray = player1Last8.map(p1m => `${p1m.h2hP1} v ${p1m.h2hP2} : ${p1m.player1.id === player1Id ? p1m.player1won : !p1m.player1won}`)
+    const p1H2hHistory = p1H2historyArray.filter(p1l => p1l !== undefined && p1l !== null).join(',')
+
+    const p1Match1 = this.matchHistoryObject(player1Last8[0], player1Id)
+    const p1Match2 = this.matchHistoryObject(player1Last8[1], player1Id)
+    const p1Match3 = this.matchHistoryObject(player1Last8[2], player1Id)
+    const p1Match4 = this.matchHistoryObject(player1Last8[3], player1Id)
+    const p1Match5 = this.matchHistoryObject(player1Last8[4], player1Id)
+
+    const p2Match1 = this.matchHistoryObject(player2Last8[0], player2Id)
+    const p2Match2 = this.matchHistoryObject(player2Last8[1], player2Id)
+    const p2Match3 = this.matchHistoryObject(player2Last8[2], player2Id)
+    const p2Match4 = this.matchHistoryObject(player2Last8[3], player2Id)
+    const p2Match5 = this.matchHistoryObject(player2Last8[4], player2Id)
+
+    const p2H2hHistoryArray = player2Last8.map(p2m => `${p2m.h2hP1} v ${p2m.h2hP2} : ${p2m.player1.id === player2Id ? p2m.player1won : !p2m.player1won}`)
+    const p2H2hHistory = p2H2hHistoryArray.filter(p2l => p2l !== undefined && p2l !== null).join(',')
+
+    const p1H2hTotalWins = this.p1H2hTotalWins(p1Match1, p1Match2, p1Match3, p1Match4, p1Match5)
+    const p2H2hTotalWins = this.p2H2hTotalWins(p2Match1, p2Match2, p2Match3, p2Match4, p2Match5)
+    const p1H2HWinRate = p1H2hTotalWins / (p1H2hTotalWins + p2H2hTotalWins)
+    const netH2hWinDiff = p1H2hTotalWins - p2H2hTotalWins
+
+    const intercept = 0.5563;
+    const coefficients = {
+      p1_h2h_total_wins: -0.0104,
+      p2_h2h_total_wins: -0.0066,
+      p1_h2h_win_rate: 0.2988,
+      net_h2h_diff: -0.0038,
+      h2h_p1: 0.1634,
+      h2h_p2: -0.2976,
+    };
+
+    const z =
+      intercept +
+      coefficients.p1_h2h_total_wins * p1H2hTotalWins +
+      coefficients.p2_h2h_total_wins * p2H2hTotalWins +
+      coefficients.p1_h2h_win_rate * p1H2HWinRate +
+      coefficients.net_h2h_diff * netH2hWinDiff +
+      coefficients.h2h_p1 * h2hP1Won +
+      coefficients.h2h_p2 * h2hP2
+
+    const p1WinProbF1 = 1 / (1 + Math.exp(-z))
+
+    const scores = {
+      p1H2hTotalWins,
+      p2H2hTotalWins,
+      p1H2HWinRate,
+      netH2hWinDiff,
+      p1WinProbF1
+    }
 
     const result = {
       "id": sportEvent.id,
@@ -228,7 +302,22 @@ export default class PlayerAdapter {
       p1PrevH2hV,
       p2PrevH2h,
       p2PrevH2hV,
+      p1L10History,
+      p2L10History,
+      p1H2hHistory,
+      p2H2hHistory,
       prematchOdds,
+      p1Match1,
+      p1Match2,
+      p1Match3,
+      p1Match4,
+      p1Match5,
+      p2Match1,
+      p2Match2,
+      p2Match3,
+      p2Match4,
+      p2Match5,
+      scores,
       'p1MatchNo': player1MatchesSum.matchNo,
       'p2MatchNo': player2MatchesSum.matchNo,
       "setScore": 'waiting',
@@ -255,6 +344,36 @@ export default class PlayerAdapter {
     }
 
     return tableTennisResult
+  }
+
+  p1H2hTotalWins(p1Match1: any, p1Match2: any, p1Match3: any, p1Match4: any, p1Match5: any) {
+    let p1H2hTotalWins = 0
+    p1H2hTotalWins = p1H2hTotalWins + p1Match1.h2hP1
+    p1H2hTotalWins = p1H2hTotalWins + p1Match2.h2hP1
+    p1H2hTotalWins = p1H2hTotalWins + p1Match3.h2hP1
+    p1H2hTotalWins = p1H2hTotalWins + p1Match4.h2hP1
+    p1H2hTotalWins = p1H2hTotalWins + p1Match5.h2hP1
+    return p1H2hTotalWins
+
+  }
+
+  p2H2hTotalWins(p2Match1: any, p2Match2: any, p2Match3: any, p2Match4: any, p2Match5: any) {
+    let p2H2hTotalWins = 0
+    p2H2hTotalWins = p2H2hTotalWins + p2Match1.h2hP1
+    p2H2hTotalWins = p2H2hTotalWins + p2Match2.h2hP1
+    p2H2hTotalWins = p2H2hTotalWins + p2Match3.h2hP1
+    p2H2hTotalWins = p2H2hTotalWins + p2Match4.h2hP1
+    p2H2hTotalWins = p2H2hTotalWins + p2Match5.h2hP1
+    return p2H2hTotalWins
+
+  }
+
+  matchHistoryObject(player1Matches: any, playerId: string) {
+    return {
+      p1: player1Matches.h2hP1,
+      p2: player1Matches.h2hP2,
+      p1Won: player1Matches.player1.id === playerId ? player1Matches.player1won : !player1Matches.player1won
+    }
   }
 
   playerConsistency(player1Matches: any, player1Id: string) {

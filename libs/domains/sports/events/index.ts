@@ -77,6 +77,23 @@ export const getPredictionsTT: Handler = async (event: any) => {
   })
 }
 
+export const getMorePrediction: Handler = async (event: any) => {
+  const { sport } = event.queryStringParameters
+  var result = await new ScheduleAdapter().getMorePrediction(sport)
+
+  var response = {
+    statusCode: 200,
+    body: JSON.stringify(result,
+      null,
+      2
+    ),
+  }
+
+  return new Promise((resolve) => {
+    resolve(response)
+  })
+}
+
 export const getMatchesPredictions: Handler = async (event: any) => {
   const { sport } = event.queryStringParameters
   var result = await new ScheduleAdapter().getMatchesPredictions(sport)
@@ -177,12 +194,12 @@ export const getPlayersUrl: Handler = async (event: any) => {
 }
 
 export const cacheBetAPI: Handler = async (event: any) => {
-  // let tennisBetAPIResult = await new ScheduleAdapter().cacheTennisBetAPI()
+  let tennisBetAPIResult = await new ScheduleAdapter().cacheTennisBetAPI()
   let tableTennisBetAPIResult = await new ScheduleAdapter().cacheTableTennisBetAPI()
   // let cacheEsportsBetAPIResult = await new ScheduleAdapter().cacheEsportsBetAPI()
 
-  const responseText = `table tennis events : ${tableTennisBetAPIResult}`
-  // tennis events : ${tennisBetAPIResult}
+  const responseText = `table tennis events : ${tableTennisBetAPIResult}
+    tennis events : ${tennisBetAPIResult}`
   // esports events : ${cacheEsportsBetAPIResult}`
 
   // const responseText = `table tennis events: ${tableTennisBetAPIResult}`

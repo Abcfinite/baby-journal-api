@@ -7,9 +7,12 @@ import * as nodeHtmlParser from 'node-html-parser'
 import { Client } from 'pg'
 import { toQuery, formatResult, prediction, probability } from './src/utils/helper'
 import {
-  getPendingMatchRecords, getH2hPrevSimilarMatch, getH2hPrevV1SimilarMatch,
+  getPendingMatchRecords, getH2hPrevV1SimilarMatch,
   insertMatchRecords, updateMatchRecordPrediction,
   updateMatchRecordWinner,
+  getH2hScoreSimilarMatch,
+  updateMatchRecPred,
+  getL10ScoreSimilarMatch,
 } from './src/utils/database'
 
 import S3ClientCustom from '@abcfinite/s3-client-custom'
@@ -30,7 +33,7 @@ import { put } from "@abcfinite/dynamodb-client/src/items"
 export default class ScheduleAdapter {
 
   currentCheckDate = '11/02/2025' //esports only
-  matchNoTennis = 196
+  matchNoTennis = 294
   matchNoEsports = 35
 
   async removeAllCache() {
@@ -123,7 +126,7 @@ export default class ScheduleAdapter {
   }
 
   async cacheTableTennisBetAPI() {
-    await new BetapiClient().getBet365Events('92')
+    // await new BetapiClient().getBet365Events('92')
     const events = await new BetapiClient().getEvents('92')
 
     return events.length
@@ -219,14 +222,14 @@ export default class ScheduleAdapter {
     const pendingMatchesResult = await getPendingMatchRecords(tableName)
 
     for (const match of pendingMatchesResult) {
-      const similarMatches = await getH2hPrevSimilarMatch(match, tableName)
+      // const similarMatches = await getH2hPrevSimilarMatch(match, tableName)
       const prevH2hMatchesV1 = await getH2hPrevV1SimilarMatch(match, tableName)
 
-      const prediction = {
-        id: match.id,
-        p1Probability: similarMatches.length > 0 ? (similarMatches.filter(m => m.winner === '1').length / similarMatches.length).toFixed(2) : '0',
-        probabilityMatchNo: similarMatches.length,
-      }
+      // const prediction = {
+      //   id: match.id,
+      //   p1Probability: similarMatches.length > 0 ? (similarMatches.filter(m => m.winner === '1').length / similarMatches.length).toFixed(2) : '0',
+      //   probabilityMatchNo: similarMatches.length,
+      // }
 
       const predH2hV1 = {
         id: match.id,
@@ -234,11 +237,96 @@ export default class ScheduleAdapter {
         probabilityMatchNo: prevH2hMatchesV1.length,
       }
 
-      await updateMatchRecordPrediction(prediction, predH2hV1, tableName)
+      const scores = {
+        h2hP1Score: this.score(match.h2h_history_p1?.split(',') ?? []),
+        h2hP2Score: this.score(match.h2h_history_p2?.split(',') ?? []),
+        l10P1Score: this.score(match.l10_history_p1?.split(',') ?? []),
+        l10P2Score: this.score(match.l10_history_p2?.split(',') ?? []),
+      }
+
+      await updateMatchRecordPrediction(predH2hV1, scores, tableName)
 
     }
 
     return 'please run getPredictionsTT'
+  }
+
+  async getMorePrediction(sport: string) {
+    var tableName = 'table_tennis_matches'
+    if (sport === 'tennis') {
+      tableName = 'tennis_matches'
+    }
+
+    const pendingMatchesResult = await getPendingMatchRecords(tableName)
+
+    for (const match of pendingMatchesResult) {
+      // const similarMatches = await getH2hPrevSimilarMatch(match, tableName)
+
+      var scoreData = []
+
+      if (sport === 'tennis') {
+        scoreData = await getL10ScoreSimilarMatch(match, tableName)
+      } else {
+        scoreData = await getH2hScoreSimilarMatch(match, tableName)
+      }
+
+
+      const predH2hScore = {
+        id: match.id,
+        p1Probability: scoreData.length > 0 ? (scoreData.filter(m => m.winner === '1').length / scoreData.length).toFixed(2) : '0',
+        probabilityMatchNo: scoreData.length,
+      }
+
+      await updateMatchRecPred(predH2hScore, tableName)
+
+    }
+
+    return 'please run getPredictionsTT'
+  }
+
+  score(scoreList: Array<String>) {
+    var score = 0
+    var index = 5
+
+    scoreList.splice(0, 5).forEach(s => {
+      const p1Won = s.replaceAll(' ', '').split(':')[1] === 'true'
+      const p1Val = Number(s.replaceAll(' ', '').split(':')[0].split('v')[0])
+      const p2Val = Number(s.replaceAll(' ', '').split(':')[0].split('v')[1])
+
+      // if (p1Val === p2Val && p1Won) {
+      //   score++
+      // } else if (p1Val < p2Val && p1Won) {
+      //   score = score + 2
+      // }
+      // result : 4/11 = 0.36
+
+      // p1Won ? score++ : score--
+      // result : 1/5 = 0.2
+
+
+      // if (p1Val === p2Val) {
+      //   p1Won ? score = score + 2 : score = score - 2
+      // } else if (p1Val < p2Val) {
+      //   p1Won ? score = score + 3 : score = score - 1
+      // } else if (p1Val > p2Val) {
+      //   p1Won ? score = score + 1 : score = score - 3
+      // }
+      // result : 3/9 => 0.33
+
+      if (p1Val < p2Val && p1Won) {
+        score = score + ((p2Val - p1Val) * index)
+      } else if (p1Val > p2Val && !p1Won) {
+        score = score - ((p2Val - p1Val) * index)
+      } else if (p1Val === p2Val && !p1Won) {
+        score = score - 5
+      } else if (p1Val === p2Val && p1Won) {
+        score = score + 5
+      }
+
+      index--
+    })
+
+    return score
   }
 
   getClosestMatch(predictionAlt2: any, l10Prediction: any, streakPrediction: any, similarPrediction: any) {
@@ -887,7 +975,7 @@ export default class ScheduleAdapter {
     const queueUrl = 'https://sqs.ap-southeast-2.amazonaws.com/146261234111/table-tennis-match-schedule-queue'
     const client = new SQSClient({ region: 'ap-southeast-2' });
 
-    const bet365Events = await new BetapiClient().getBet365Events('92')
+    // const bet365Events = await new BetapiClient().getBet365Events('92')
     const events = await new BetapiClient().getEvents('92')
 
     const sportEvents = []
@@ -922,7 +1010,7 @@ export default class ScheduleAdapter {
         }
 
 
-        const bet365Event = bet365Events.find(e => e.secondaryId === event.id)
+        const bet365Event = null //bet365Events.find(e => e.secondaryId === event.id)
 
         const sportEvent = {
           id: event.id,
@@ -984,6 +1072,8 @@ export default class ScheduleAdapter {
       await new S3ClientCustom()
         .putFile('table-tennis-match-schedule', 'number.txt', `${sportEvents.length}`)
     }
+
+    console.log('>>>>>>sqsMessageNumber : %s >>>>>matchNoTT : %s >>>>>>>fileList : %s', sqsMessageNumber, matchNoTT, fileList.length)
 
     if (sqsMessageNumber === 0 && matchNoTT === (fileList.length - 1)) {
       await Promise.all(
@@ -1372,7 +1462,7 @@ export default class ScheduleAdapter {
 
       console.log('>>>result ', result)
 
-      if (result !== null || tableName === 'tennis_matches') {
+      if (result !== null) {
         await updateMatchRecordWinner(result, match.id, tableName)
       }
     }

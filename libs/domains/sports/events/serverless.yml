@@ -151,6 +151,13 @@ functions:
       - http:
           path: /predictionsTT
           method: get
+  getMorePrediction:
+    handler: index.getMorePrediction
+    timeout: 900
+    events:
+      - http:
+          path: /morePrediction
+          method: get
   getPendingResults:
     handler: index.getPendingResults
     timeout: 900
