@@ -201,6 +201,8 @@ export const toTTCsv = (jsonString: string): string => {
     'p2 h2h',
     'p1 L10',
     'p2 L10',
+    'p1 L30',
+    'p2 L30',
 
     'h2h last winner',
     'p1 BM',
@@ -225,6 +227,8 @@ export const toTTCsv = (jsonString: string): string => {
       m['h2hP2'],
       m['p1L10'],
       m['p2L10'],
+      m['p1L30'],
+      m['p2L30'],
 
       m['h2hLastWinner'],
       m['bmP1'],

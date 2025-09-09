@@ -4,7 +4,7 @@
   "author": "abraham cole finite <abrahamfinite@gmail.com>",
   "main": "./index.ts",
   "dependencies": {
-    "@abcfinite/http-api-client": "^0.0.3",
+    "@abcfinite/http-api-client": "^0.0.4",
     "lodash.get": "^4.4.2"
   },
   "jest": {

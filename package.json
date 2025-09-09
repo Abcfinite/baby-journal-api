@@ -20,6 +20,7 @@
     "jest": "^29.7.0",
     "serverless": "^3.38.0",
     "serverless-offline": "^13.3.2",
+    "serverless-offline-scheduler": "^0.5.0",
     "serverless-offline-sqs": "^8.0.0",
     "serverless-webpack": "^5.13.0",
     "ts-jest": "^29.2.5",

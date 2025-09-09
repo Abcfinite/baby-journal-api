@@ -13,6 +13,12 @@ import {
   getH2hScoreSimilarMatch,
   updateMatchRecPred,
   getL10ScoreSimilarMatch,
+  getTtMoreThanOneHalfRecords,
+  getTtLessThanOneHalfRecords,
+  updateLessThanOneHalfRecordPrediction,
+  getTtFiveFiveRecords,
+  getH2hStreakScoreSimilarMatch,
+  getH2hStreakSimilarMatch,
 } from './src/utils/database'
 
 import S3ClientCustom from '@abcfinite/s3-client-custom'
@@ -29,12 +35,13 @@ import { toCsv, toTTCsv, toTTPredCsv } from "./src/utils/builder"
 import BetapiClient from "@abcfinite/betapi-client"
 import TennisliveClient from "@abcfinite/tennislive-client"
 import { put } from "@abcfinite/dynamodb-client/src/items"
+import { MatchInput } from "./src/utils/underdogFiveFIve"
 
 export default class ScheduleAdapter {
 
-  currentCheckDate = '11/02/2025' //esports only
-  matchNoTennis = 294
-  matchNoEsports = 35
+  currentCheckDate = '14/06/2025' //esports only
+  matchNoEsports = 27
+  matchNoTennis = 93
 
   async removeAllCache() {
     const s3ClientCustom = new S3ClientCustom()
@@ -219,34 +226,30 @@ export default class ScheduleAdapter {
       tableName = 'tennis_matches'
     }
 
-    const pendingMatchesResult = await getPendingMatchRecords(tableName)
-
+    const pendingMatchesResult = await getTtMoreThanOneHalfRecords()
     for (const match of pendingMatchesResult) {
-      // const similarMatches = await getH2hPrevSimilarMatch(match, tableName)
-      const prevH2hMatchesV1 = await getH2hPrevV1SimilarMatch(match, tableName)
+      const tTMoreThanOneHalfPrediction = this.getTTMoreThanOneHalfPrediction(match)
 
-      // const prediction = {
-      //   id: match.id,
-      //   p1Probability: similarMatches.length > 0 ? (similarMatches.filter(m => m.winner === '1').length / similarMatches.length).toFixed(2) : '0',
-      //   probabilityMatchNo: similarMatches.length,
+      await updateMatchRecordPrediction(match.id, tTMoreThanOneHalfPrediction, tableName)
+
+
+      // const pendingFiveFive = await getTtFiveFiveRecords()
+      // for (const match of pendingFiveFive) {
+      //   const tTFiveFivePrediction = this.getUnderdogFiveFivePrediction(match)
+
+      //   await updateMatchRecordPrediction(match.id, tTFiveFivePrediction, tableName)
       // }
 
-      const predH2hV1 = {
-        id: match.id,
-        p1Probability: prevH2hMatchesV1.length > 0 ? (prevH2hMatchesV1.filter(m => m.winner === '1').length / prevH2hMatchesV1.length).toFixed(2) : '0',
-        probabilityMatchNo: prevH2hMatchesV1.length,
-      }
-
-      const scores = {
-        h2hP1Score: this.score(match.h2h_history_p1?.split(',') ?? []),
-        h2hP2Score: this.score(match.h2h_history_p2?.split(',') ?? []),
-        l10P1Score: this.score(match.l10_history_p1?.split(',') ?? []),
-        l10P2Score: this.score(match.l10_history_p2?.split(',') ?? []),
-      }
-
-      await updateMatchRecordPrediction(predH2hV1, scores, tableName)
-
     }
+
+
+    // const pendingLessThanOneHalf = await getTtLessThanOneHalfRecords()
+    // for (const match of pendingLessThanOneHalf) {
+    //   const tTLessThanOneHalfPrediction = this.getTTLessThanOneHalfPrediction(match)
+
+    //   await updateLessThanOneHalfRecordPrediction(match.id, tTLessThanOneHalfPrediction, tableName)
+    // }
+
 
     return 'please run getPredictionsTT'
   }
@@ -262,26 +265,118 @@ export default class ScheduleAdapter {
     for (const match of pendingMatchesResult) {
       // const similarMatches = await getH2hPrevSimilarMatch(match, tableName)
 
-      var scoreData = []
-
-      if (sport === 'tennis') {
-        scoreData = await getL10ScoreSimilarMatch(match, tableName)
-      } else {
-        scoreData = await getH2hScoreSimilarMatch(match, tableName)
-      }
+      const h2hScoreData = await getH2hScoreSimilarMatch(match, tableName)
+      const h2hStreakScoreData = await getH2hStreakScoreSimilarMatch(match, tableName)
+      const h2hStreakSimilarMatches = await getH2hStreakSimilarMatch(match, tableName)
 
 
       const predH2hScore = {
         id: match.id,
-        p1Probability: scoreData.length > 0 ? (scoreData.filter(m => m.winner === '1').length / scoreData.length).toFixed(2) : '0',
-        probabilityMatchNo: scoreData.length,
+        p1Probability: h2hScoreData.length > 0 ? (h2hScoreData.filter(m => m.winner === '1').length / h2hScoreData.length).toFixed(2) : '0',
+        probabilityMatchNo: h2hScoreData.length,
       }
 
-      await updateMatchRecPred(predH2hScore, tableName)
+      const predH2hStreakScore = {
+        id: match.id,
+        p1Probability: h2hStreakScoreData.length > 0 ? (h2hStreakScoreData.filter(m => m.winner === '1').length / h2hStreakScoreData.length).toFixed(2) : '0',
+        probabilityMatchNo: h2hStreakScoreData.length,
+      }
+
+      const h2hStreakSimilarRate = {
+        id: match.id,
+        p1Probability: h2hStreakSimilarMatches.length > 0 ? (h2hStreakSimilarMatches.filter(m => m.winner === '1').length / h2hStreakSimilarMatches.length).toFixed(2) : '0',
+        probabilityMatchNo: h2hStreakSimilarMatches.length,
+      }
+
+      await updateMatchRecPred(predH2hScore, predH2hStreakScore, h2hStreakSimilarRate, tableName)
 
     }
 
     return 'please run getPredictionsTT'
+  }
+
+  getTTLessThanOneHalfPrediction(match: any) {
+    const z =
+      -1.0429 +
+      (-0.4010 * match.odd_p1) +
+      (0.2310 * match.odd_p2) +
+      (-0.0621 * match.h2h_p1) +
+      (0.3016 * match.h2h_p2) +
+      (0.0431 * match.l10_p1) +
+      (-0.1925 * match.l10_p2) +
+      (0.0872 * this.convertStreakToNumber(match.p1_streak)) +
+      (-0.1582 * this.convertStreakToNumber(match.p2_streak));
+
+    const probability = 1 / (1 + Math.exp(-z));
+    return probability;
+  }
+
+  // getUnderdogFiveFivePrediction(match: any) {
+
+  //   const p1WinStats = [match.p1_match1_p1_won, match.p1_match2_p1_won, match.p1_match3_p1_won, match.p1_match4_p1_won, match.p1_match5_p1_won]
+  //   const p2WinStats = [match.p2_match1_p1_won, match.p2_match2_p1_won, match.p2_match3_p1_won, match.p2_match4_p1_won, match.p2_match5_p1_won]
+
+  //   // Example usage
+  //   const matchData: MatchInput = {
+  //     odd_p1: 1.61,
+  //     odd_p2: 2.2,
+  //     h2h_p1: 4,
+  //     h2h_p2: 6,
+  //     l10_p1: 5,
+  //     l10_p2: 7,
+  //     p1_streak_encoded: this.convertStreakToNumber(match.p1_streak),
+  //     p2_streak_encoded: this.convertStreakToNumber(match.p2_streak),
+  //     p1_recent_win_rate: this.calculateRecentWinRate(p1WinStats),   // from last 5 matches
+  //     p2_recent_win_rate: this.calculateRecentWinRate(p2WinStats)
+  //   };
+
+    // const prob = predictUnderdogWin(matchData);
+
+  //   return prob
+  // }
+
+  getTTMoreThanOneHalfPrediction(match: any) {
+
+    const p1WinStats = [match.p1_match1_p1_won, match.p1_match2_p1_won, match.p1_match3_p1_won, match.p1_match4_p1_won, match.p1_match5_p1_won]
+    const p2WinStats = [match.p2_match1_p1_won, match.p2_match2_p1_won, match.p2_match3_p1_won, match.p2_match4_p1_won, match.p2_match5_p1_won]
+
+    const z =
+      -0.1855 +
+      0.4257 * match.odd_p1 +
+      -0.3236 * match.odd_p2 +
+      -0.1682 * match.h2h_p1 +
+      0.2034 * match.h2h_p2 +
+      0.0385 * match.l10_p1 +
+      -0.1406 * match.l10_p2 +
+      -0.0554 * this.convertStreakToNumber(match.p1_streak) +
+      0.0820 * this.convertStreakToNumber(match.p2_streak) +
+      0.4896 * this.calculateRecentWinRate(p1WinStats) +
+      0.7436 * this.calculateRecentWinRate(p2WinStats);
+
+    const probability = 1 / (1 + Math.exp(-z));
+    return probability;
+  }
+
+  convertStreakToNumber(streak) {
+    if (typeof streak !== 'string' || streak.length < 2) return 0;
+
+    const num = parseInt(streak.slice(0, -1), 10);
+    const type = streak.slice(-1).toUpperCase();
+
+    if (isNaN(num)) return 0;
+
+    return type === 'W' ? num : type === 'L' ? -num : 0;
+  }
+
+  calculateRecentWinRate(matches) {
+    if (!Array.isArray(matches) || matches.length === 0) return 0;
+
+    const wins = matches
+      .map(m => typeof m === 'boolean' ? m : String(m).toLowerCase() === 'true')
+      .filter(m => typeof m === 'boolean');
+
+    const sum = wins.reduce((acc, win) => acc + (win ? 1 : 0), 0);
+    return sum / wins.length;
   }
 
   score(scoreList: Array<String>) {
@@ -799,7 +894,9 @@ export default class ScheduleAdapter {
         const checkStart = new Date(now)
         checkStart.setMinutes(checkStart.getMinutes() + 15)
         const checkEnd = new Date(now)
-        checkEnd.setDate(checkEnd.getDate() + 1);
+        checkEnd.setHours(checkEnd.getHours() + 6)
+
+        // matches that not included in the schedule
         if ((parseInt(event.time) * 1000) < checkStart.getTime() ||
           (parseInt(event.time) * 1000) > checkEnd.getTime()) {
           continue

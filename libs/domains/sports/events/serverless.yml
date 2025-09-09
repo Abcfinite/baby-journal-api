@@ -5,6 +5,8 @@ frameworkVersion: '3'
 plugins:
   - serverless-webpack
   - serverless-offline
+  - serverless-offline-scheduler
+
 
 constructs:
   myqueue:
@@ -36,6 +38,8 @@ custom:
   webpack:
     webpackConfig: './webpack.config.js'
     packager: yarn
+  serverless-offline:
+    httpPort: 4000
 
 functions:
   removeAllCache:
@@ -158,13 +162,16 @@ functions:
       - http:
           path: /morePrediction
           method: get
+
   getPendingResults:
     handler: index.getPendingResults
     timeout: 900
     events:
+      # - schedule: cron(0/15 * * * ? *)
       - http:
           path: /pendingResults
           method: get
+
   getBet365TableTennisList:
     handler: index.getBet365TableTennisList
     timeout: 900

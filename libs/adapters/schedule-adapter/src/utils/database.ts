@@ -25,10 +25,11 @@ export const insertMatchRecords = async (matches: Array<any>, tableName: string,
                 oddData = oddsData.find((m) => m.player1.name = match['p1Name'] && m.player2.name === match['p2Name'])
             }
 
-            tableTennisAttributes = ', p1_last_game_won, p2_last_game_won, p1_last_game_set_score, p2_last_game_set_score, p1_last_game_opponent_name, p2_last_game_opponent_name'
+            tableTennisAttributes = ', p1_last_game_won, p2_last_game_won, p1_last_game_set_score, p2_last_game_set_score, p1_last_game_opponent_name, p2_last_game_opponent_name, p1_p1last, p1_p2last, p2_p1last, p2_p2last, bm_player_names'
             tableTennisValues = `, ${match['p1LastGameWon']}, ${match['p2LastGameWon']}, 
                 '${match['p1LastGameSetScore']}', '${match['p2LastGameSetScore']}', 
-                '${match['p1LastGameOpponentName']}', '${match['p2LastGameOpponentName']}'`
+                '${match['p1LastGameOpponentName']}', '${match['p2LastGameOpponentName']}',
+                '${match['p1P1Last'].join('')}', '${match['p1P2Last'].join('')}', '${match['p2P1Last'].join('')}', '${match['p2P2Last'].join('')}', '${match['bmPlayerNames'].join(', ')}'`
         }
 
         try {
@@ -38,48 +39,18 @@ export const insertMatchRecords = async (matches: Array<any>, tableName: string,
             const timestamp = new Date(unixTime)
             const localTimestamp = timestamp.toLocaleDateString('en-ZA', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', hour12: false, minute: '2-digit', second: '2-digit' })
 
-            const sql = `INSERT INTO ${tableName} (id, match_time, p1_id, p2_id, p1_name, p2_name, h2h_p1, h2h_p2, bm_p1, bm_p2, l10_p1, l10_p2,
+            const sql = `INSERT INTO ${tableName} (id, match_time, p1_id, p2_id, p1_name, p2_name, h2h_p1, h2h_p2, bm_p1, bm_p2, l10_p1, l10_p2, l30_p1, l30_p2,
                     p1_won_won, p1_won_lost, p1_lost_won, p1_lost_lost,
-                    p2_won_won, p2_won_lost, p2_lost_won, p2_lost_lost, p1_match_no, p2_match_no, p1_streak, p2_streak, odd_p1_win_lowest, odd_p1_lost_highest,
-                    odd_p2_win_lowest, odd_p2_lost_highest, p1_last_game_odd, p2_last_game_odd, p1_prev_h2h, p1_prev_h2h_v, p2_prev_h2h, p2_prev_h2h_v, odd_p1, odd_p2,
-                    l10_history_p1, l10_history_p2,
-                    h2h_history_p1, h2h_history_p2,
-                    p1_match1_p1, p1_match1_p2, p1_match1_p1_won, 
-                    p1_match2_p1, p1_match2_p2, p1_match2_p1_won,
-                    p1_match3_p1, p1_match3_p2, p1_match3_p1_won,
-                    p1_match4_p1, p1_match4_p2, p1_match4_p1_won,
-                    p1_match5_p1, p1_match5_p2, p1_match5_p1_won,
-                    p2_match1_p1, p2_match1_p2, p2_match1_p1_won, 
-                    p2_match2_p1, p2_match2_p2, p2_match2_p1_won,
-                    p2_match3_p1, p2_match3_p2, p2_match3_p1_won,
-                    p2_match4_p1, p2_match4_p2, p2_match4_p1_won,
-                    p2_match5_p1, p2_match5_p2, p2_match5_p1_won,
-                    p1_h2h_total_wins, p2_h2h_total_wins, p1_h2h_win_rate, net_h2h_win_diff, p1_win_prob_f1
+                    p2_won_won, p2_won_lost, p2_lost_won, p2_lost_lost, p1_match_no, p2_match_no, p1_streak, p2_streak                    
                      ${tableTennisAttributes})
                 VALUES ('${match['id']}', '${localTimestamp}', '${match['p1Id']}', '${match['p2Id']}', '${match['p1Name']}', '${match['p2Name']}', 
-                    ${match['h2hP1']}, ${match['h2hP2']}, ${match['bmP1']}, ${match['bmP2']}, ${match['p1L10']}, ${match['p2L10']},
+                    ${match['h2hP1']}, ${match['h2hP2']}, ${match['bmP1']}, ${match['bmP2']}, ${match['p1L10']}, ${match['p2L10']}, ${match['p1L30']}, ${match['p2L30']},
                     ${match['p1Consistency']['wonWon']}, ${match['p1Consistency']['wonLost']}, ${match['p1Consistency']['lostWon']}, ${match['p1Consistency']['lostLost']},
                     ${match['p2Consistency']['wonWon']}, ${match['p2Consistency']['wonLost']}, ${match['p2Consistency']['lostWon']}, ${match['p2Consistency']['lostLost']},
-                    ${match['p1MatchNo']}, ${match['p2MatchNo']}, '${match['p1Streak']}', '${match['p2Streak']}', '${match['oddP1Winlowest']}', '${match['oddP1LostHighest']}',
-                    ${match['oddP2Winlowest']}, ${match['oddP2LostHighest']}, ${_.get(match, 'p1LastGameOdd', 0)}, ${_.get(match, 'p2LastGameOdd', 0)},
-                    ${_.get(match, 'p1PrevH2h', 0)}, ${_.get(match, 'p1PrevH2hV', 0)}, ${_.get(match, 'p2PrevH2h', 0)}, ${_.get(match, 'p2PrevH2hV', 0)},
-                    ${_.get(match, 'prematchOdds.prematchOddP1', 0)}, ${_.get(match, 'prematchOdds.prematchOddP2', 0)},
-                    '${_.get(match, 'p1L10History')}', '${_.get(match, 'p2L10History')}',
-                    '${_.get(match, 'p1H2hHistory')}', '${_.get(match, 'p2H2hHistory')}',
-                    ${_.get(match, 'p1Match1.p1', 0)}, ${_.get(match, 'p1Match1.p2', 0)}, ${_.get(match, 'p1Match1.p1Won')},
-                    ${_.get(match, 'p1Match2.p1', 0)}, ${_.get(match, 'p1Match2.p2', 0)}, ${_.get(match, 'p1Match2.p1Won')},
-                    ${_.get(match, 'p1Match3.p1', 0)}, ${_.get(match, 'p1Match3.p2', 0)}, ${_.get(match, 'p1Match3.p1Won')},
-                    ${_.get(match, 'p1Match4.p1', 0)}, ${_.get(match, 'p1Match4.p2', 0)}, ${_.get(match, 'p1Match4.p1Won')},
-                    ${_.get(match, 'p1Match5.p1', 0)}, ${_.get(match, 'p1Match5.p2', 0)}, ${_.get(match, 'p1Match5.p1Won')},
-                    ${_.get(match, 'p2Match1.p1', 0)}, ${_.get(match, 'p2Match1.p2', 0)}, ${_.get(match, 'p2Match1.p1Won')},
-                    ${_.get(match, 'p2Match2.p1', 0)}, ${_.get(match, 'p2Match2.p2', 0)}, ${_.get(match, 'p2Match2.p1Won')},
-                    ${_.get(match, 'p2Match3.p1', 0)}, ${_.get(match, 'p2Match3.p2', 0)}, ${_.get(match, 'p2Match3.p1Won')},
-                    ${_.get(match, 'p2Match4.p1', 0)}, ${_.get(match, 'p2Match4.p2', 0)}, ${_.get(match, 'p2Match4.p1Won')},
-                    ${_.get(match, 'p2Match5.p1', 0)}, ${_.get(match, 'p2Match5.p2', 0)}, ${_.get(match, 'p2Match5.p1Won')},
-                    ${_.get(match, 'scores.p1H2hTotalWins')}, ${_.get(match, 'scores.p2H2hTotalWins')}, ${_.get(match, 'scores.p1H2HWinRate')}, ${_.get(match, 'scores.netH2hWinDiff')}, ${_.get(match, 'scores.p1WinProbF1')}
+                    ${match['p1MatchNo']}, ${match['p2MatchNo']}, '${match['p1Streak']}', '${match['p2Streak']}'
                     ${tableTennisValues})`
 
-            // console.log('>>>sql :', sql)
+            console.log('>>>sql :', sql)
 
             await connection.query(sql)
         } catch (error) {
@@ -92,7 +63,7 @@ export const insertMatchRecords = async (matches: Array<any>, tableName: string,
 }
 
 
-export const updateMatchRecordPrediction = async (predH2hV1: any, scores: any, tableName: string) => {
+export const updateMatchRecordPrediction = async (id: string, prediction: number, tableName: string) => {
     const connection = new Client({
         connectionString: 'postgres://postgres:AWqasde321!@database-1.cs5ztqximrwk.ap-southeast-2.rds.amazonaws.com/tennis',
         ssl: {
@@ -101,14 +72,9 @@ export const updateMatchRecordPrediction = async (predH2hV1: any, scores: any, t
     })
 
     await connection.connect()
-    const sql = `UPDATE ${tableName} 
-        SET pred_prev_h2h_v1 = ${predH2hV1 !== undefined && predH2hV1 !== null ? predH2hV1.p1Probability : 0},
-            pred_prev_h2h_v1_match_no = ${predH2hV1 !== undefined && predH2hV1 !== null ? predH2hV1.probabilityMatchNo : 0},
-            h2h_p1_score = ${scores.h2hP1Score},
-            h2h_p2_score = ${scores.h2hP2Score},
-            l10_p1_score = ${scores.l10P1Score},
-            l10_p2_score = ${scores.l10P2Score}
-        WHERE id = '${predH2hV1.id}'`
+    const sql = `UPDATE table_tennis_matches 
+        SET prediction_p2_win = ${prediction}
+        WHERE id = '${id}'`
 
     // prediction_distances_last_match_p1_percentage = ${distancesScorePrediction !== undefined && distancesScorePrediction !== null ? distancesScorePrediction.p1Probability : 0},
     // prediction_distances_last_match_p1_match_no = ${distancesScorePrediction !== undefined && distancesScorePrediction !== null ? distancesScorePrediction.probabilityMatchNo : 0}
@@ -120,8 +86,27 @@ export const updateMatchRecordPrediction = async (predH2hV1: any, scores: any, t
     await connection.end()
 }
 
+export const updateLessThanOneHalfRecordPrediction = async (id: string, prediction: number, tableName: string) => {
+    const connection = new Client({
+        connectionString: 'postgres://postgres:AWqasde321!@database-1.cs5ztqximrwk.ap-southeast-2.rds.amazonaws.com/tennis',
+        ssl: {
+            rejectUnauthorized: false
+        }
+    })
 
-export const updateMatchRecPred = async (predH2hV1: any, tableName: string) => {
+    await connection.connect()
+    const sql = `UPDATE table_tennis_matches 
+        SET prediction_p2_lost = ${prediction}
+        WHERE id = '${id}'`
+
+    console.log(sql)
+
+    await connection.query(sql)
+    await connection.end()
+}
+
+
+export const updateMatchRecPred = async (predH2hV1: any, predH2hStreak: any, similarRate: any, tableName: string) => {
     const connection = new Client({
         connectionString: 'postgres://postgres:AWqasde321!@database-1.cs5ztqximrwk.ap-southeast-2.rds.amazonaws.com/tennis',
         ssl: {
@@ -132,7 +117,11 @@ export const updateMatchRecPred = async (predH2hV1: any, tableName: string) => {
     await connection.connect()
     const sql = `UPDATE ${tableName} 
         SET prediction_p1_win = ${predH2hV1 !== undefined && predH2hV1 !== null ? predH2hV1.p1Probability : 0},
-            prediction_match_no = ${predH2hV1 !== undefined && predH2hV1 !== null ? predH2hV1.probabilityMatchNo : 0}
+            prediction_match_no = ${predH2hV1 !== undefined && predH2hV1 !== null ? predH2hV1.probabilityMatchNo : 0},
+            prediction_2_p1_win = ${predH2hStreak !== undefined && predH2hStreak !== null ? predH2hStreak.p1Probability : 0},
+            prediction_2_match_no = ${predH2hStreak !== undefined && predH2hStreak !== null ? predH2hStreak.probabilityMatchNo : 0},
+            h2h_streak_win_rate = ${similarRate !== undefined && similarRate !== null ? similarRate.p1Probability : 0},
+            h2h_streak_match_count = ${similarRate !== undefined && similarRate !== null ? similarRate.probabilityMatchNo : 0}
         WHERE id = '${predH2hV1.id}'`
 
     console.log(sql)
@@ -206,6 +195,62 @@ export const getPendingMatchRecords = async (tableName: string) => {
     return result.rows
 }
 
+export const getTtMoreThanOneHalfRecords = async () => {
+    const connection = new Client({
+        connectionString: 'postgres://postgres:AWqasde321!@database-1.cs5ztqximrwk.ap-southeast-2.rds.amazonaws.com/tennis',
+        ssl: {
+            rejectUnauthorized: false
+        }
+    })
+
+    await connection.connect()
+    const sql = `SELECT * FROM table_tennis_matches WHERE winner IS NULL
+        and odd_p2 < odd_p1
+    	and odd_p2 >= 1.5`
+    const result = await connection.query(sql)
+    await connection.end()
+
+    return result.rows
+}
+
+
+export const getTtFiveFiveRecords = async () => {
+    const connection = new Client({
+        connectionString: 'postgres://postgres:AWqasde321!@database-1.cs5ztqximrwk.ap-southeast-2.rds.amazonaws.com/tennis',
+        ssl: {
+            rejectUnauthorized: false
+        }
+    })
+
+    await connection.connect()
+    const sql = `SELECT * FROM table_tennis_matches WHERE winner IS NULL
+        and odd_p2 > odd_p1
+    	and h2h_p1 = 5
+        and h2h_p2 = 5`
+    const result = await connection.query(sql)
+    await connection.end()
+
+    return result.rows
+}
+
+export const getTtLessThanOneHalfRecords = async () => {
+    const connection = new Client({
+        connectionString: 'postgres://postgres:AWqasde321!@database-1.cs5ztqximrwk.ap-southeast-2.rds.amazonaws.com/tennis',
+        ssl: {
+            rejectUnauthorized: false
+        }
+    })
+
+    await connection.connect()
+    const sql = `SELECT * FROM table_tennis_matches WHERE winner IS NULL
+        and odd_p2 < odd_p1
+    	and odd_p2 < 1.5`
+    const result = await connection.query(sql)
+    await connection.end()
+
+    return result.rows
+}
+
 export const getSimilarMatch = async (match: any, tableName: string) => {
     const connection = new Client({
         connectionString: 'postgres://postgres:AWqasde321!@database-1.cs5ztqximrwk.ap-southeast-2.rds.amazonaws.com/tennis',
@@ -264,8 +309,60 @@ export const getH2hScoreSimilarMatch = async (match: any, tableName: string) => 
     await connection.connect()
     const sql = `select * from ${tableName}
         where winner is not null
-	        and h2h_p1_score = ${match.h2h_p1_score} 
-            and h2h_p2_score = ${match.h2h_p2_score}`
+	        and p1_win_current_h2h = ${match.p1_win_current_h2h} 
+            and p1_lost_current_h2h = ${match.p1_lost_current_h2h}
+	        and p2_win_current_h2h = ${match.p2_win_current_h2h} 
+            and p2_lost_current_h2h = ${match.p2_lost_current_h2h}`
+
+    console.log(sql)
+
+    const result = await connection.query(sql)
+    await connection.end()
+
+    return result.rows
+}
+
+export const getH2hStreakScoreSimilarMatch = async (match: any, tableName: string) => {
+    const connection = new Client({
+        connectionString: 'postgres://postgres:AWqasde321!@database-1.cs5ztqximrwk.ap-southeast-2.rds.amazonaws.com/tennis',
+        ssl: {
+            rejectUnauthorized: false
+        }
+    })
+
+    await connection.connect()
+    const sql = `select * from ${tableName}
+        where winner is not null
+	        and p1_win_current_h2h = ${match.p1_win_current_h2h} 
+            and p1_lost_current_h2h = ${match.p1_lost_current_h2h}
+	        and p2_win_current_h2h = ${match.p2_win_current_h2h} 
+            and p2_lost_current_h2h = ${match.p2_lost_current_h2h}
+            and p1_streak = '${match.p1_streak}'
+            and p2_streak = '${match.p2_streak}'`
+
+    console.log(sql)
+
+    const result = await connection.query(sql)
+    await connection.end()
+
+    return result.rows
+}
+
+export const getH2hStreakSimilarMatch = async (match: any, tableName: string) => {
+    const connection = new Client({
+        connectionString: 'postgres://postgres:AWqasde321!@database-1.cs5ztqximrwk.ap-southeast-2.rds.amazonaws.com/tennis',
+        ssl: {
+            rejectUnauthorized: false
+        }
+    })
+
+    await connection.connect()
+    const sql = `select * from ${tableName}
+        where winner is not null
+	        and p1_streak = '${match.p1_streak}' 
+            and p2_streak = '${match.p2_streak}'
+	        and h2h_p1 = ${match.h2h_p1} 
+            and h2h_p2 = ${match.h2h_p2}`
 
     console.log(sql)
 
@@ -286,8 +383,10 @@ export const getL10ScoreSimilarMatch = async (match: any, tableName: string) => 
     await connection.connect()
     const sql = `select * from ${tableName}
         where winner is not null
-	        and l10_p1_score = ${match.l10_p1_score} 
-            and l10_p2_score = ${match.l10_p2_score}`
+	        and p1_win_current_l10 = ${match.p1_win_current_l10} 
+            and p1_lost_current_l10 = ${match.p1_lost_current_l10}
+	        and p2_win_current_l10 = ${match.p2_win_current_l10} 
+            and p2_lost_current_l10 = ${match.p2_lost_current_l10}`
 
     console.log(sql)
 
