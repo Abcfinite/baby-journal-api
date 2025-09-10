@@ -1,7 +1,7 @@
-import _, { add } from "lodash"
+import _ from "lodash"
 import { Client } from 'pg'
 
-export const insertMatchRecords = async (matches: Array<any>, tableName: string, oddsData?: Array<any>,) => {
+export const insertMatchRecords = async (matches: Array<any>, tableName: string) => {
     const connection = new Client({
         connectionString: 'postgres://postgres:AWqasde321!@database-1.cs5ztqximrwk.ap-southeast-2.rds.amazonaws.com/tennis',
         ssl: {
@@ -19,11 +19,11 @@ export const insertMatchRecords = async (matches: Array<any>, tableName: string,
         let tableTennisAttributes = ''
         let tableTennisValues = ''
         if (tableName === 'table_tennis_matches') {
-            var oddData = []
+            // var oddData = []
 
-            if (oddsData !== undefined && oddsData !== null) {
-                oddData = oddsData.find((m) => m.player1.name = match['p1Name'] && m.player2.name === match['p2Name'])
-            }
+            // if (oddsData !== undefined && oddsData !== null) {
+            //     oddData = oddsData.find((m) => m.player1.name = match['p1Name'] && m.player2.name === match['p2Name'])
+            // }
 
             tableTennisAttributes = ', p1_last_game_won, p2_last_game_won, p1_last_game_set_score, p2_last_game_set_score, p1_last_game_opponent_name, p2_last_game_opponent_name, p1_p1last, p1_p2last, p2_p1last, p2_p2last, bm_player_names'
             tableTennisValues = `, ${match['p1LastGameWon']}, ${match['p2LastGameWon']}, 
@@ -63,7 +63,7 @@ export const insertMatchRecords = async (matches: Array<any>, tableName: string,
 }
 
 
-export const updateMatchRecordPrediction = async (id: string, prediction: number, tableName: string) => {
+export const updateMatchRecordPrediction = async (id: string, prediction: number) => {
     const connection = new Client({
         connectionString: 'postgres://postgres:AWqasde321!@database-1.cs5ztqximrwk.ap-southeast-2.rds.amazonaws.com/tennis',
         ssl: {
@@ -86,7 +86,7 @@ export const updateMatchRecordPrediction = async (id: string, prediction: number
     await connection.end()
 }
 
-export const updateLessThanOneHalfRecordPrediction = async (id: string, prediction: number, tableName: string) => {
+export const updateLessThanOneHalfRecordPrediction = async (id: string, prediction: number) => {
     const connection = new Client({
         connectionString: 'postgres://postgres:AWqasde321!@database-1.cs5ztqximrwk.ap-southeast-2.rds.amazonaws.com/tennis',
         ssl: {
@@ -396,15 +396,15 @@ export const getL10ScoreSimilarMatch = async (match: any, tableName: string) => 
     return result.rows
 }
 
-const operator = (p1: number, p2: number) => {
-    if (p1 > p2) {
-        return '>'
-    } else if (p1 < p2) {
-        return '<'
-    } else {
-        return '='
-    }
-}
+// const operator = (p1: number, p2: number) => {
+//     if (p1 > p2) {
+//         return '>'
+//     } else if (p1 < p2) {
+//         return '<'
+//     } else {
+//         return '='
+//     }
+// }
 
 export const getSimilarMatchAlt2 = async (match: any, tableName: string) => {
     const connection = new Client({
@@ -452,7 +452,7 @@ export const getSimilarL10 = async (match: any, tableName: string) => {
     return result.rows
 }
 
-export const getSimilarPrediction = async (predictionAlt2: any, l10Prediction: any, streakPrediction: any, tableName: string) => {
+export const getSimilarPrediction = async (predictionAlt2: any, l10Prediction: any, streakPrediction: any) => {
     const connection = new Client({
         connectionString: 'postgres://postgres:AWqasde321!@database-1.cs5ztqximrwk.ap-southeast-2.rds.amazonaws.com/tennis',
         ssl: {

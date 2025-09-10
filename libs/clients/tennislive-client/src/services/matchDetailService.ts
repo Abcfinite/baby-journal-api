@@ -2,7 +2,7 @@
 import HttpApiClient from '@abcfinite/http-api-client'
 import MatchDetailParser from '../parsers/matchDetailParser'
 import { v4 as uuidv4 } from 'uuid'
-import { MatchDetail } from '@/types/matchDetail'
+import { MatchDetail } from '../types/matchDetail'
 
 export default class MatchDetailService {
   async getMatchDetail(matchDetailUrl: string): Promise<MatchDetail> {

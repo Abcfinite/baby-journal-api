@@ -1,4 +1,4 @@
-import _, { forEach } from "lodash"
+import _ from "lodash"
 import TennisliveClient from '@abcfinite/tennislive-client'
 import MatchAdapter from '@abcfinite/match-adapter'
 import {
@@ -763,8 +763,6 @@ export default class PlayerAdapter {
     const tennisLiveClient = new TennisliveClient()
     const player1 = await tennisLiveClient.getPlayer(sportEvent.player1.url)
     const player2 = await tennisLiveClient.getPlayer(sportEvent.player2.url)
-    var p10match = {}
-    var p20match = {}
 
     const date = new Date();
     const formattedDate = `${date.getDate()}.${date.getMonth() + 1}.${date.getFullYear()}`;

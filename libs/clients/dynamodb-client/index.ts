@@ -1,4 +1,4 @@
-import { ScanCommandInput, QueryCommandInput } from '@aws-sdk/client-dynamodb';
+import { ScanCommandInput } from '@aws-sdk/client-dynamodb';
 import { put, remove, get, scan, count, deleteAndRecreateTable, query, update } from './src/items';
 import { UpdateCommandInput } from '@aws-sdk/lib-dynamodb';
 

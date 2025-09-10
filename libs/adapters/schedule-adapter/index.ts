@@ -1,29 +1,24 @@
-import _, { add } from "lodash"
+import _ from "lodash"
 import { parse } from 'csv-parse'
 import { Readable } from 'stream'
 import * as nodeHtmlParser from 'node-html-parser'
 
-
 import { Client } from 'pg'
 import { toQuery, formatResult, prediction, probability } from './src/utils/helper'
 import {
-  getPendingMatchRecords, getH2hPrevV1SimilarMatch,
+  getPendingMatchRecords,
   insertMatchRecords, updateMatchRecordPrediction,
   updateMatchRecordWinner,
   getH2hScoreSimilarMatch,
   updateMatchRecPred,
-  getL10ScoreSimilarMatch,
   getTtMoreThanOneHalfRecords,
-  getTtLessThanOneHalfRecords,
-  updateLessThanOneHalfRecordPrediction,
-  getTtFiveFiveRecords,
   getH2hStreakScoreSimilarMatch,
   getH2hStreakSimilarMatch,
 } from './src/utils/database'
 
 import S3ClientCustom from '@abcfinite/s3-client-custom'
-import { putItem, executeScan, executeQuery, executeQueryIndex, updateItem, removeItem } from '@abcfinite/dynamodb-client'
-import { playerNamesToSportEvent, SportEvent } from "@abcfinite/tennislive-client/src/types/sportEvent"
+import { putItem, executeScan, executeQuery } from '@abcfinite/dynamodb-client'
+import { playerNamesToSportEvent } from "@abcfinite/tennislive-client/src/types/sportEvent"
 import PlayerAdapter from '@abcfinite/player-adapter'
 import {
   SQSClient, SendMessageCommand,
@@ -34,8 +29,6 @@ import {
 import { toCsv, toTTCsv, toTTPredCsv } from "./src/utils/builder"
 import BetapiClient from "@abcfinite/betapi-client"
 import TennisliveClient from "@abcfinite/tennislive-client"
-import { put } from "@abcfinite/dynamodb-client/src/items"
-import { MatchInput } from "./src/utils/underdogFiveFIve"
 
 export default class ScheduleAdapter {
 
@@ -220,17 +213,18 @@ export default class ScheduleAdapter {
     return data.map(p => [p.fp, p.result, p.prediction, p.probability]).join('\r\n')
   }
 
-  async getPredictionsTT(sport: string) {
-    var tableName = 'table_tennis_matches'
-    if (sport === 'tennis') {
-      tableName = 'tennis_matches'
-    }
+  async getPredictionsTT() {
+    // var tableName = 'table_tennis_matches'
+    // if (sport === 'tennis') {
+    //   tableName = 'tennis_matches'
+    // }
 
     const pendingMatchesResult = await getTtMoreThanOneHalfRecords()
     for (const match of pendingMatchesResult) {
       const tTMoreThanOneHalfPrediction = this.getTTMoreThanOneHalfPrediction(match)
 
-      await updateMatchRecordPrediction(match.id, tTMoreThanOneHalfPrediction, tableName)
+      await updateMatchRecordPrediction(match.id, tTMoreThanOneHalfPrediction)
+      // await updateMatchRecordPrediction(match.id, tTMoreThanOneHalfPrediction, tableName)
 
 
       // const pendingFiveFive = await getTtFiveFiveRecords()
@@ -432,8 +426,8 @@ export default class ScheduleAdapter {
       var b = l10Prediction.p1Probability - pred['prediction_l10_p1_win']
       var c = streakPrediction.p1Probability - pred['prediction_streak_p1_win']
 
-      var euclidean = Math.sqrt(a * a + b * b + c * c)
-      var manhattan = Math.abs(a) + Math.abs(b) + Math.abs(c)
+      // var euclidean = Math.sqrt(a * a + b * b + c * c)
+      // var manhattan = Math.abs(a) + Math.abs(b) + Math.abs(c)
       var chebyshev = Math.max(Math.abs(a), Math.abs(b), Math.abs(c))
 
       neighbors.push({
@@ -884,7 +878,7 @@ export default class ScheduleAdapter {
     if (sqsMessageNumber === 0) {
       for await (const event of events) {
         const eventDateTime = new Date(parseInt(event.time) * 1000).toLocaleString('en-GB', { timeZone: 'Australia/Sydney' })
-        const eventDate = eventDateTime.split(',')[0].trim()
+        // const eventDate = eventDateTime.split(',')[0].trim()
 
         if (event.player1.name.includes('/')) {
           continue
@@ -1584,7 +1578,7 @@ export default class ScheduleAdapter {
 
     console.log('>>>>markets: ', markets.length)
 
-    markets.forEach((market, index) => {
+    markets.forEach((market, _index) => {
       const teamContainers = market.querySelectorAll('.rcl-ParticipantFixtureDetails_TeamAndScoresContainer')
       matchGroup.push(teamContainers.length)
     })

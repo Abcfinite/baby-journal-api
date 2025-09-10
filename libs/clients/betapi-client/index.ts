@@ -6,9 +6,9 @@ import { Odds } from './src/types/odds';
 import EventParser from './src/parsers/eventParser';
 import CacheService from './src/services/cache-service';
 import EndedService from './src/services/ended-service';
-import { EventTotal } from '@/types/eventTotal';
+import { EventTotal } from './src/types/eventTotal';
 import OddService from './src/services/odd-service';
-import { EventSummary } from '@/types/eventSummary';
+import { EventSummary } from './src/types/eventSummary';
 
 export default class BetapiClient {
 

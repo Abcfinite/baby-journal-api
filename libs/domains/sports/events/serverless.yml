@@ -28,9 +28,31 @@ provider:
         - dynamodb:PutItem
         - dynamodb:UpdateItem
         - dynamodb:DeleteItem
+        - s3:ListBucket
+        - s3:DeleteObject
+        - s3:PutObject
+        - s3:GetObject
+        - sqs:GetQueueAttributes
+        - sqs:SendMessage
+        - sqs:PurgeQueue
+        - sqs:ReceiveMessage
+        - sqs:DeleteMessage
       Resource:
         - "arn:aws:dynamodb:ap-southeast-2:*:table/Bets"
         - "arn:aws:dynamodb:ap-southeast-2:*:table/weight"
+        - "arn:aws:s3:::betapi-cache" # Resource for s3:ListBucket
+        - "arn:aws:s3:::betapi-cache/*"
+        - "arn:aws:s3:::tennis-match-schedule" # Resource for s3:ListBucket
+        - "arn:aws:s3:::tennis-match-schedule/*"
+        - "arn:aws:s3:::table-tennis-match-schedule" # Resource for s3:ListBucket
+        - "arn:aws:s3:::table-tennis-match-schedule/*"
+        - "arn:aws:s3:::esports-match-schedule" # Resource for s3:ListBucket
+        - "arn:aws:s3:::esports-match-schedule/*"
+        - "arn:aws:s3:::bet365-table-tennis" # Resource for s3:ListBucket
+        - "arn:aws:s3:::bet365-table-tennis/*"
+        - "arn:aws:sqs:ap-southeast-2:146261234111:table-tennis-match-schedule-queue" # SQS Queue ARN
+
+
   environment:
     TENNISLIVE_HOST: ${env:TENNISLIVE_HOST}
 
@@ -167,7 +189,6 @@ functions:
     handler: index.getPendingResults
     timeout: 900
     events:
-      # - schedule: cron(0/15 * * * ? *)
       - http:
           path: /pendingResults
           method: get

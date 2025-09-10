@@ -27,6 +27,10 @@ export default class EventParser {
       score: _.get(event, 'ss'),
       player1won: isP1Won,
       retired: isP1Won == null && _.get(event, 'ss') === 'away' ? 1 : 2,
+      h2hP1: undefined,
+      h2hP2: undefined,
+      l10P1: undefined,
+      l10P2: undefined
     }
   }
 

@@ -65,6 +65,7 @@ export default class SportEventParser {
         sportEvent = {
           player1: player1,
           player2: player2,
+          type: '',
           id: this.createId(player1, player2, newEventDate),
           url: '',
           stage: timeAndStage.substring(5),
@@ -137,6 +138,7 @@ export default class SportEventParser {
         player1: player1,
         player2: player2,
         id: this.createId(player1, player2, newEventDate),
+        type: '',
         url: '',
         stage: '',
         date: '',

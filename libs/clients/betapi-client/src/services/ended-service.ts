@@ -4,7 +4,7 @@ import HttpApiClient from '@abcfinite/http-api-client'
 import CacheService from './cache-service'
 import { Event } from '../types/event'
 import { EventSummary } from '../types/eventSummary'
-import { EventTotal } from '@/types/eventTotal'
+import { EventTotal } from '../types/eventTotal'
 import EventSummaryParser from '../parsers/eventSummaryParser'
 
 export default class EndedService {

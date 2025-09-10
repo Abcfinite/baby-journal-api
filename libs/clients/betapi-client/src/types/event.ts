@@ -11,7 +11,11 @@ export interface Event {
   stage: string,
   score?: string,
   player1won?: boolean,
-  retired?: number
+  retired?: number,
+  h2hP1: any,
+  h2hP2: any,
+  l10P1: any,
+  l10P2: any
 }
 
 // retired

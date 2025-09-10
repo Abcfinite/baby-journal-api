@@ -11,4 +11,4 @@ comment externals on webpack.config.js
 
 make shell
 cd libs/domains/sports/bets
-sls deploy
+AWS_PROFILE=miclairin sls deploy

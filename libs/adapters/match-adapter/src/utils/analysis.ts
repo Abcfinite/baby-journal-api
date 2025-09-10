@@ -1,8 +1,6 @@
 import { Player } from "@abcfinite/tennislive-client/src/types/player";
-import PlayerAdapter from "../../../player-adapter";
 import _ from "lodash";
 import S3ClientCustom from "@abcfinite/s3-client-custom";
-import { playerNamesToSportEvent } from "@abcfinite/tennislive-client/src/types/sportEvent";
 
 export default class Analysis {
   // async previousPlayersBenchmark(player1: Player, player2: Player) {
