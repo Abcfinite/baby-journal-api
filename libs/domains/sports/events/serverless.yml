@@ -184,13 +184,19 @@ functions:
       - http:
           path: /morePrediction
           method: get
-
   getPendingResults:
     handler: index.getPendingResults
     timeout: 900
     events:
       - http:
           path: /pendingResults
+          method: get
+  getSafeMatches:
+    handler: index.getSafeMatches
+    timeout: 900
+    events:
+      - http:
+          path: /safeMatches
           method: get
 
   getBet365TableTennisList:

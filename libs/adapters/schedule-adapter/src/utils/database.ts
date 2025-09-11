@@ -1,5 +1,5 @@
 import _ from "lodash"
-import { Client } from 'pg'
+import { Client, Pool } from 'pg'
 
 export const insertMatchRecords = async (matches: Array<any>, tableName: string) => {
     const connection = new Client({
@@ -195,7 +195,7 @@ export const getPendingMatchRecords = async (tableName: string) => {
     return result.rows
 }
 
-export const getTtMoreThanOneHalfRecords = async () => {
+export const getTTSafeMatches = async () => {
     const connection = new Client({
         connectionString: 'postgres://postgres:AWqasde321!@database-1.cs5ztqximrwk.ap-southeast-2.rds.amazonaws.com/tennis',
         ssl: {
@@ -204,13 +204,112 @@ export const getTtMoreThanOneHalfRecords = async () => {
     })
 
     await connection.connect()
-    const sql = `SELECT * FROM table_tennis_matches WHERE winner IS NULL
-        and odd_p2 < odd_p1
-    	and odd_p2 >= 1.5`
+    const sql = `
+select * from (
+
+select 
+	id
+	, match_time
+	, bet_on
+	, notes
+	
+	, p1_name, p2_name
+	
+	, prediction_3
+	, prediction_3_win_count
+	, prediction_3_count
+	
+	, prediction_2_rev_p1_win
+	, prediction_2_rev_p1_win_count
+	, prediction_2_rev_match_no
+	
+	, streak_score
+	, pLast_score
+	, pwon_last_score
+
+	, prediction_p1_win
+	, prediction_p1_win_count
+	, prediction_match_no
+	
+	, prediction_2_p1_win
+	, prediction_2_p1_win_count
+	, prediction_2_match_no
+
+	, lost_won_rate
+	, lost_won_p1_win_count
+	, lost_won_count
+	
+	, p1_won_won, p2_won_won
+	, p1_won_lost, p2_won_lost
+	, p1_lost_won, p2_lost_won
+	, p1_lost_lost, p2_lost_lost
+	
+	
+	, p1_streak, p2_streak
+	, h2h_p1, h2h_p2
+	, bm_p1, bm_p2
+
+    , l10_p1 - l10_p2 AS l10_gap
+    , l30_p1 - l30_p2 AS l30_gap
+
+	, p1_p1last, p1_p2last, p2_p1last, p2_p2last
+
+
+	, p1_last_game_set_score, p2_last_game_set_score
+
+
+from table_tennis_matches
+where winner is null
+)
+
+where
+	prediction_3_count > 1
+	and (
+            (
+                prediction_3 > 0.65
+                and prediction_p1_win > 0.5
+                and prediction_2_p1_win > 0.56
+                and lost_won_rate > 0.5
+            )
+            OR
+            (
+                prediction_3 < 0.35
+                and prediction_p1_win < 0.5
+                and prediction_2_p1_win < 0.44
+                and lost_won_rate < 0.5
+            )		
+	    )
+order by match_time desc`
+
     const result = await connection.query(sql)
     await connection.end()
 
     return result.rows
+}
+
+export const setTTPredictions = async () => {
+    const pool = new Pool({
+        connectionString: 'postgres://postgres:AWqasde321!@database-1.cs5ztqximrwk.ap-southeast-2.rds.amazonaws.com/tennis',
+        ssl: {
+            rejectUnauthorized: false
+        }
+    })
+
+    const client = await pool.connect();
+    
+ try {
+        // Use client.query() to call the stored procedure
+        const sql = 'CALL update_predictions();'
+        await client.query(sql)
+
+        // A stored procedure using `CALL` does not return a result set.
+        // It returns command status. If `update_predictions()` has `OUT` parameters or
+        // returns a set of rows, you would use a `SELECT` statement to get them.
+        return 'getPredictionsTT completed'
+    } finally {
+        // Release the client back to the pool
+        client.release();
+    }
 }
 
 

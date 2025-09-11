@@ -1,6 +1,7 @@
 import PlayerAdapter from '@abcfinite/player-adapter'
 import ScheduleAdapter from '@abcfinite/schedule-adapter'
 import { Handler } from 'aws-lambda';
+import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 
 export const checkPlayer: Handler = async (event: any) => {
   const { player1, player2, player1Odd, player2Odd } = event.queryStringParameters
@@ -306,6 +307,23 @@ export const getPendingResults: Handler = async (event: any) => {
   const { sport } = event.queryStringParameters
 
   var result = await new ScheduleAdapter().getPendingResults(sport)
+
+  var response = {
+    statusCode: 200,
+    body: JSON.stringify(result,
+      null,
+      2
+    ),
+  }
+
+  return new Promise((resolve) => {
+    resolve(response)
+  })
+}
+
+export const getSafeMatches: Handler = async () => {
+
+  var result = await new ScheduleAdapter().getSafeMatches()
 
   var response = {
     statusCode: 200,

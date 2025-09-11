@@ -7,13 +7,14 @@ import { Client } from 'pg'
 import { toQuery, formatResult, prediction, probability } from './src/utils/helper'
 import {
   getPendingMatchRecords,
-  insertMatchRecords, updateMatchRecordPrediction,
+  insertMatchRecords,
   updateMatchRecordWinner,
   getH2hScoreSimilarMatch,
   updateMatchRecPred,
-  getTtMoreThanOneHalfRecords,
+  setTTPredictions,
   getH2hStreakScoreSimilarMatch,
   getH2hStreakSimilarMatch,
+  getTTSafeMatches,
 } from './src/utils/database'
 
 import S3ClientCustom from '@abcfinite/s3-client-custom'
@@ -29,6 +30,8 @@ import {
 import { toCsv, toTTCsv, toTTPredCsv } from "./src/utils/builder"
 import BetapiClient from "@abcfinite/betapi-client"
 import TennisliveClient from "@abcfinite/tennislive-client"
+import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
+
 
 export default class ScheduleAdapter {
 
@@ -214,38 +217,9 @@ export default class ScheduleAdapter {
   }
 
   async getPredictionsTT() {
-    // var tableName = 'table_tennis_matches'
-    // if (sport === 'tennis') {
-    //   tableName = 'tennis_matches'
-    // }
+    await setTTPredictions()
 
-    const pendingMatchesResult = await getTtMoreThanOneHalfRecords()
-    for (const match of pendingMatchesResult) {
-      const tTMoreThanOneHalfPrediction = this.getTTMoreThanOneHalfPrediction(match)
-
-      await updateMatchRecordPrediction(match.id, tTMoreThanOneHalfPrediction)
-      // await updateMatchRecordPrediction(match.id, tTMoreThanOneHalfPrediction, tableName)
-
-
-      // const pendingFiveFive = await getTtFiveFiveRecords()
-      // for (const match of pendingFiveFive) {
-      //   const tTFiveFivePrediction = this.getUnderdogFiveFivePrediction(match)
-
-      //   await updateMatchRecordPrediction(match.id, tTFiveFivePrediction, tableName)
-      // }
-
-    }
-
-
-    // const pendingLessThanOneHalf = await getTtLessThanOneHalfRecords()
-    // for (const match of pendingLessThanOneHalf) {
-    //   const tTLessThanOneHalfPrediction = this.getTTLessThanOneHalfPrediction(match)
-
-    //   await updateLessThanOneHalfRecordPrediction(match.id, tTLessThanOneHalfPrediction, tableName)
-    // }
-
-
-    return 'please run getPredictionsTT'
+    return 'predictionsTT completed'
   }
 
   async getMorePrediction(sport: string) {
@@ -1233,7 +1207,14 @@ export default class ScheduleAdapter {
           VisibilityTimeout: 20,
         })
 
+
         const receiveMessageCommandResult = await client.send(receiveMessageCommand);
+
+        if (receiveMessageCommandResult.Messages === undefined) {
+          requestResult = 'queue complete or error'
+          break
+        }
+
         var sportEvent = JSON.parse(receiveMessageCommandResult.Messages[0].Body)
 
         try {
@@ -1250,6 +1231,11 @@ export default class ScheduleAdapter {
             .putFile('table-tennis-match-schedule',
               sportEvent.id + '.json',
               JSON.stringify(sportEvent))
+        }
+
+        if (receiveMessageCommandResult.Messages === undefined) {
+          requestResult = 'queue complete or error'
+          break
         }
 
         await client.send(
@@ -1644,6 +1630,40 @@ export default class ScheduleAdapter {
       .putFile('bet365-table-tennis', 'schedule.json', JSON.stringify(eventCollection))
 
     return 'test'
+  }
+
+  async getSafeMatches() {
+    var safeMatchesTTResult = await getTTSafeMatches()
+    if (safeMatchesTTResult.length === 0) { 
+      return 'no match found, email not sent'
+    }
+
+
+    const ses = new SESClient({ region: "ap-southeast-2" });
+
+
+    const emailParams = {
+        Source: "michaelclairine@gmail.com", // The verified sender's email
+        Destination: {
+            ToAddresses: ["michaelfebrianto@gmail.com"]
+        },
+        Message: {
+            Body: {
+                Text: { Data: safeMatchesTTResult.join('\n') }
+            },
+          Subject: { Data: 'time to bet' }
+        }
+    };
+
+    try {
+        const command = new SendEmailCommand(emailParams);
+        const data = await ses.send(command);
+        console.log("Email sent successfully. MessageId:", data.MessageId);
+        return { statusCode: 200, body: "Email sent!" };
+    } catch (error) {
+        console.error("Failed to send email:", error);
+        return { statusCode: 500, body: "Email failed to send." };
+    }
   }
 }
 
