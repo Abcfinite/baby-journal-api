@@ -1649,7 +1649,7 @@ export default class ScheduleAdapter {
         },
         Message: {
             Body: {
-                Text: { Data: safeMatchesTTResult.join('\n') }
+                Text: { Data: JSON.stringify(safeMatchesTTResult, null, 2) }
             },
           Subject: { Data: 'time to bet' }
         }

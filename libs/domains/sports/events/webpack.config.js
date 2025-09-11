@@ -7,8 +7,8 @@ const nodeModulesPath = path.resolve(__dirname, '../../../../node_modules')
 module.exports = {
   target: 'node',
   entry: slsw.lib.entries,
-  mode: 'development',
-  // mode: 'production',
+  // mode: 'development',
+  mode: 'production',
   optimization: {
     minimize: false,
   },
@@ -16,12 +16,12 @@ module.exports = {
     hints: false,
   },
   devtool: false,
-  externals: [
-    nodeExternals({
-      allowlist: [/^@abcfinite\//],
-      modulesDir: nodeModulesPath,
-    }),
-  ],
+  // externals: [
+  //   nodeExternals({
+  //     allowlist: [/^@abcfinite\//],
+  //     modulesDir: nodeModulesPath,
+  //   }),
+  // ],
   module: {
     rules: [
       {

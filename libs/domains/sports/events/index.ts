@@ -1,7 +1,6 @@
 import PlayerAdapter from '@abcfinite/player-adapter'
 import ScheduleAdapter from '@abcfinite/schedule-adapter'
 import { Handler } from 'aws-lambda';
-import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 
 export const checkPlayer: Handler = async (event: any) => {
   const { player1, player2, player1Odd, player2Odd } = event.queryStringParameters

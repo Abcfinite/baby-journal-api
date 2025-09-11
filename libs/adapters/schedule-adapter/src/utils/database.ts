@@ -261,24 +261,25 @@ select
 from table_tennis_matches
 where winner is null
 )
-
 where
+
 	prediction_3_count > 1
+	
 	and (
-            (
-                prediction_3 > 0.65
-                and prediction_p1_win > 0.5
-                and prediction_2_p1_win > 0.56
-                and lost_won_rate > 0.5
-            )
-            OR
-            (
-                prediction_3 < 0.35
-                and prediction_p1_win < 0.5
-                and prediction_2_p1_win < 0.44
-                and lost_won_rate < 0.5
-            )		
-	    )
+
+		(
+			prediction_3 > 0.7
+			and prediction_2_p1_win > 0.56
+            and pwon_last_score > 0
+		)
+		OR
+		(
+			prediction_3 < 0.35
+			and prediction_2_p1_win < 0.44
+            and pwon_last_score < 0
+		)		
+	)
+
 order by match_time desc`
 
     const result = await connection.query(sql)
