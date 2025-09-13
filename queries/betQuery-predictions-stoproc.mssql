@@ -264,23 +264,23 @@ where winner is null
 
 
 update table_tennis_matches 
-set bet_on = 1, notes = 'qBv2'
+set bet_on = 1, notes = 'qBv3'
 where winner is null
 	and prediction_3_count > 2
 	and prediction_2_p1_win > 0.5
 	and lost_won_rate > 0.5
-	and lost_won_count > 1
+	and lost_won_count > 10
 	and prediction_p1_win > 0.5;
 
 
 
 update table_tennis_matches 
-set bet_on = 2, notes = 'qB'
+set bet_on = 2, notes = 'qBv3'
 where winner is null
 	and prediction_3_count > 2 
 	and prediction_2_p1_win < 0.5
 	and lost_won_rate < 0.5
-	and lost_won_count > 1
+	and lost_won_count > 10
 	and prediction_p1_win < 0.5;
 
 ----------------------------------------------------------------------------------------------------------
