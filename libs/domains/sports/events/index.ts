@@ -194,7 +194,7 @@ export const getPlayersUrl: Handler = async () => {
 }
 
 export const cacheBetAPI: Handler = async () => {
-  let tennisBetAPIResult = await new ScheduleAdapter().cacheTennisBetAPI()
+  // let tennisBetAPIResult = await new ScheduleAdapter().cacheTennisBetAPI()
   let tableTennisBetAPIResult = await new ScheduleAdapter().cacheTableTennisBetAPI()
   // let cacheEsportsBetAPIResult = await new ScheduleAdapter().cacheEsportsBetAPI()
 
@@ -202,10 +202,10 @@ export const cacheBetAPI: Handler = async () => {
   //   tennis events : ${tennisBetAPIResult}
   //   esports events : ${cacheEsportsBetAPIResult}`
 
-  // const responseText = `table tennis events: ${tableTennisBetAPIResult}`
+  const responseText = `table tennis events: ${tableTennisBetAPIResult}`
 
-  const responseText = `table tennis events : ${tableTennisBetAPIResult}
-    tennis events : ${tennisBetAPIResult}`
+  // const responseText = `table tennis events : ${tableTennisBetAPIResult}
+  //   tennis events : ${tennisBetAPIResult}`
 
 
   const response = {

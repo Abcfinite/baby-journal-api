@@ -218,11 +218,11 @@ select
 	, prediction_3
 	, prediction_3_win_count
 	, prediction_3_count
-	
+		
 	, prediction_2_rev_p1_win
 	, prediction_2_rev_p1_win_count
 	, prediction_2_rev_match_no
-	
+		
 	, streak_score
 	, pLast_score
 	, pwon_last_score
@@ -234,11 +234,11 @@ select
 	, prediction_2_p1_win
 	, prediction_2_p1_win_count
 	, prediction_2_match_no
-
+	
 	, lost_won_rate
 	, lost_won_p1_win_count
 	, lost_won_count
-	
+		
 	, p1_won_won, p2_won_won
 	, p1_won_lost, p2_won_lost
 	, p1_lost_won, p2_lost_won
@@ -253,32 +253,13 @@ select
     , l30_p1 - l30_p2 AS l30_gap
 
 	, p1_p1last, p1_p2last, p2_p1last, p2_p2last
-
-
 	, p1_last_game_set_score, p2_last_game_set_score
-
 
 from table_tennis_matches
 where winner is null
 )
-where
-
-	prediction_3_count > 1
-	
-	and (
-
-		(
-			prediction_3 > 0.7
-			and prediction_2_p1_win > 0.56
-            and pwon_last_score > 0
-		)
-		OR
-		(
-			prediction_3 < 0.35
-			and prediction_2_p1_win < 0.44
-            and pwon_last_score < 0
-		)		
-	)
+where bet_on is not null
+    and match_time > (now() AT TIME ZONE 'AEST')
 
 order by match_time desc`
 
