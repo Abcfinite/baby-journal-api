@@ -240,24 +240,23 @@ update table_tennis_matches set lost_won_count_on = lost_won_count where winner 
 ----------------------------------------------------------------------------------------------------------
 --- qA ---
 
-
 update table_tennis_matches 
-set bet_on = 1, notes = 'qA'
+set bet_on = 1, notes = 'qAv2'
 where winner is null
-	and prediction_3_count > 2 
-	and prediction_3 > 0.8
-	and prediction_2_p1_win > 0.5
-	and lost_won_rate > 0.5;
-
-
-
+	prediction_3_on > 0.65
+	and prediction_3_count_on > 5
+	and prediction_p1_win > 0.5
+	and ( lost_won_rate_on > 0.5 or prediction_2_p1_win_on > 0.5 );
+	
+	
 update table_tennis_matches 
-set bet_on = 2, notes = 'qA'
+set bet_on = 2, notes = 'qAv2'
 where winner is null
-	and prediction_3_count > 2 
-	and prediction_3 < 0.2
-	and prediction_2_p1_win < 0.5
-	and lost_won_rate < 0.5;
+	and prediction_3 < 0.4
+	and prediction_3_count > 12
+	and prediction_p1_win < 0.5
+	and ( lost_won_rate_on < 0.5 or prediction_2_p1_win_on < 0.5 );
+
 
 ----------------------------------------------------------------------------------------------------------
 --- qB ---
@@ -286,7 +285,7 @@ where winner is null
 ----------------------------------------------------------------------------------------------------------
 --- clear old stall matches --
 
-delete from table_tennis_matches where winner is null and DATE(match_time AT TIME ZONE 'AEST') = DATE((now() AT TIME ZONE 'AEST') - INTERVAL '1 days');
+-- delete from table_tennis_matches where winner is null and DATE(match_time AT TIME ZONE 'AEST') = DATE((now() AT TIME ZONE 'AEST') - INTERVAL '1 days');
 
 
 END;
