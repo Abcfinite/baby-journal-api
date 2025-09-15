@@ -234,29 +234,33 @@ update table_tennis_matches set prediction_3_on = prediction_3 where winner is n
 update table_tennis_matches set prediction_3_count_on = prediction_3_count where winner is null;
 update table_tennis_matches set prediction_2_p1_win_on = prediction_2_p1_win where winner is null;
 update table_tennis_matches set prediction_2_match_no_on = prediction_2_match_no where winner is null;
+update table_tennis_matches set prediction_2_rev_p1_win_on = prediction_2_rev_p1_win where winner is null;
+update table_tennis_matches set prediction_2_rev_match_no_on = prediction_2_rev_match_no where winner is null;
 update table_tennis_matches set lost_won_rate_on = lost_won_rate where winner is null;
 update table_tennis_matches set lost_won_count_on = lost_won_count where winner is null;
 
 ----------------------------------------------------------------------------------------------------------
 --- qA ---
 
-update table_tennis_matches 
-set bet_on = 1, notes = 'qAv2'
-where winner is null
-	prediction_3_on > 0.65
-	and prediction_3_count_on > 5
-	and prediction_p1_win > 0.5
-	and ( lost_won_rate_on > 0.5 or prediction_2_p1_win_on > 0.5 );
-	
-	
-update table_tennis_matches 
-set bet_on = 2, notes = 'qAv2'
-where winner is null
-	and prediction_3 < 0.4
-	and prediction_3_count > 12
-	and prediction_p1_win < 0.5
-	and ( lost_won_rate_on < 0.5 or prediction_2_p1_win_on < 0.5 );
+-- at least 3 days with similar win%
 
+-- check win 1
+-- prediction_3_on > 0.4
+-- and prediction_2_p1_win_on > 0.5
+-- and lost_won_rate_on > 0.4
+-- and prediction_2_rev_p1_win > 0.4
+-- 59% (32)
+
+update table_tennis_matches 
+set bet_on = 1, notes = 'qAv3'
+where winner is null
+	and prediction_2_rev_p1_win > 0.7;
+	
+	
+update table_tennis_matches 
+set bet_on = 2, notes = 'qAv3'
+where winner is null
+	and prediction_2_rev_p1_win < 0.3;
 
 ----------------------------------------------------------------------------------------------------------
 --- qB ---
