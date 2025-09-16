@@ -329,15 +329,17 @@ where winner is null
 
 
 update table_tennis_matches 
-set bet_on = 1, notes = 'qBv4'
+set bet_on = 1, notes = 'qBv5'
 where winner is null
-	and prediction_streak_p1_win < 0.65;
+	and prediction_streak_p1_win >= 0.5
+	and prediction_streak_match_no > 1;
 
 
 update table_tennis_matches 
-set bet_on = 2, notes = 'qBv4'
+set bet_on = 2, notes = 'qBv5'
 where winner is null
-	and prediction_streak_p1_win < 0.35;
+	and prediction_streak_p1_win < 0.5
+	and prediction_streak_match_no > 1;
 
 ----------------------------------------------------------------------------------------------------------
 --- clear old stall matches --
