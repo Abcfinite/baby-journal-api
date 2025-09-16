@@ -242,49 +242,64 @@ update table_tennis_matches set lost_won_count_on = lost_won_count where winner 
 ----------------------------------------------------------------------------------------------------------
 --- qA ---
 
--- at least 3 days with similar win%
+-- stable query criteria :
+-- > same pattern everyday
+-- > lost in a row max 2
+	--> 10670645, 10671945
 
--- check win 1
--- prediction_3_on > 0.4
--- and prediction_2_p1_win_on > 0.5
--- and lost_won_rate_on > 0.4
--- and prediction_2_rev_p1_win > 0.4
--- 59% (32)
+-- CASHOUT :
+-- ON LEAD and overtime
+-- 2-0
+-- 2-1
+-- 2-2 and on lead by 2
+	-- this is save bet for 2 matches already
 
 update table_tennis_matches 
-set bet_on = 1, notes = 'qAv3'
+set bet_on = 1, notes = 'qAv4'
 where winner is null
-	and prediction_2_rev_p1_win > 0.7;
+	and prediction_2_rev_p1_win > 0.7	
+	and ((
+    	CASE WHEN prediction_3_on > 0.6 THEN 1 ELSE 0 END +
+    	CASE WHEN prediction_2_p1_win_on > 0.6 THEN 1 ELSE 0 END +
+    	CASE WHEN lost_won_rate_on > 0.6 THEN 1 ELSE 0 END
+		) >= 2);
+
 	
 	
 update table_tennis_matches 
-set bet_on = 2, notes = 'qAv3'
+set bet_on = 2, notes = 'qAv4'
 where winner is null
-	and prediction_2_rev_p1_win < 0.3;
+	and prediction_2_rev_p1_win < 0.3
+	and ((
+    	CASE WHEN prediction_3_on < 0.6 THEN 1 ELSE 0 END +
+    	CASE WHEN prediction_2_p1_win_on < 0.6 THEN 1 ELSE 0 END +
+    	CASE WHEN lost_won_rate_on < 0.6 THEN 1 ELSE 0 END
+		) >= 2);
+
 
 ----------------------------------------------------------------------------------------------------------
 --- qB ---
 
 
-update table_tennis_matches 
-set bet_on = 1, notes = 'qBv3'
-where winner is null
-	and prediction_3_count > 2
-	and prediction_2_p1_win > 0.5
-	and lost_won_rate > 0.5
-	and lost_won_count > 10
-	and prediction_p1_win > 0.5;
+-- update table_tennis_matches 
+-- set bet_on = 1, notes = 'qBv3'
+-- where winner is null
+-- 	and prediction_3_count > 2
+-- 	and prediction_2_p1_win > 0.5
+-- 	and lost_won_rate > 0.5
+-- 	and lost_won_count > 10
+-- 	and prediction_p1_win > 0.5;
 
 
 
-update table_tennis_matches 
-set bet_on = 2, notes = 'qBv3'
-where winner is null
-	and prediction_3_count > 2 
-	and prediction_2_p1_win < 0.5
-	and lost_won_rate < 0.5
-	and lost_won_count > 10
-	and prediction_p1_win < 0.5;
+-- update table_tennis_matches 
+-- set bet_on = 2, notes = 'qBv3'
+-- where winner is null
+-- 	and prediction_3_count > 2 
+-- 	and prediction_2_p1_win < 0.5
+-- 	and lost_won_rate < 0.5
+-- 	and lost_won_count > 10
+-- 	and prediction_p1_win < 0.5;
 
 ----------------------------------------------------------------------------------------------------------
 --- clear old stall matches --
