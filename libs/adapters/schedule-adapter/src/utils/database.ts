@@ -214,6 +214,9 @@ select
 	, notes
 	
 	, p1_name, p2_name
+
+	, prediction_streak_p1_win
+	, prediction_streak_match_no
 	
 	, prediction_3
 	, prediction_3_win_count
