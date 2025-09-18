@@ -334,15 +334,21 @@ update table_tennis_matches set prediction_raw_count_on = prediction_raw_count w
 update table_tennis_matches 
 set bet_on = 1, notes = 'qBv7'
 where winner is null
-	and prediction_raw_p1 > 0.6
-	and prediction_raw_count > 3;
+	and h2h_p1 > h2h_p2
+	and prediction_3_on > 0.5
+	and prediction_2_p1_win_on > 0.5
+	and lost_won_rate_on > 0.6
+	and prediction_2_rev_p1_win > 0.5;
 
 
 update table_tennis_matches 
-set bet_on = 2, notes = 'qBv6'
+set bet_on = 2, notes = 'qBv7'
 where winner is null
-	and prediction_raw_p1 > 0.4
-	and prediction_raw_count > 3;
+	and h2h_p2 > h2h_p1
+	and prediction_3_on < 0.5
+	and prediction_2_p1_win_on < 0.5
+	and lost_won_rate_on < 0.4
+	and prediction_2_rev_p1_win < 0.5;
 
 ----------------------------------------------------------------------------------------------------------
 --- clear old stall matches --
