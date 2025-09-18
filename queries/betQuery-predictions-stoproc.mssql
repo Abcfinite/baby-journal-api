@@ -236,9 +236,9 @@ BEGIN
 
 	UPDATE table_tennis_matches AS target
 	SET 
-	  prediction_streak_p1_win = stats.percentage,
--- 	  lost_won_p1_win_count = stats.sum_p1_won,
-	  prediction_streak_match_no = stats.match_count
+	  prediction_raw_p1 = stats.percentage,
+	  prediction_raw_win_count_on = stats.sum_p1_won,
+	  prediction_raw_count = stats.match_count
 	FROM (
 	  SELECT 
 		p1_won_won, p2_won_won
@@ -285,6 +285,9 @@ update table_tennis_matches set prediction_2_rev_p1_win_on = prediction_2_rev_p1
 update table_tennis_matches set prediction_2_rev_match_no_on = prediction_2_rev_match_no where winner is null;
 update table_tennis_matches set lost_won_rate_on = lost_won_rate where winner is null;
 update table_tennis_matches set lost_won_count_on = lost_won_count where winner is null;
+update table_tennis_matches set prediction_raw_p1 = prediction_raw_p1 where winner is null;
+update table_tennis_matches set prediction_raw_win_count_on = prediction_raw_win_count_on where winner is null;
+update table_tennis_matches set prediction_raw_count_on = prediction_raw_count where winner is null;
 
 ----------------------------------------------------------------------------------------------------------
 --- qA ---
@@ -301,27 +304,27 @@ update table_tennis_matches set lost_won_count_on = lost_won_count where winner 
 -- 2-2 and on lead by 2
 	-- this is save bet for 2 matches already
 
-update table_tennis_matches 
-set bet_on = 1, notes = 'qAv4'
-where winner is null
-	and prediction_2_rev_p1_win > 0.7	
-	and ((
-    	CASE WHEN prediction_3_on > 0.6 THEN 1 ELSE 0 END +
-    	CASE WHEN prediction_2_p1_win_on > 0.6 THEN 1 ELSE 0 END +
-    	CASE WHEN lost_won_rate_on > 0.6 THEN 1 ELSE 0 END
-		) >= 2);
+-- update table_tennis_matches 
+-- set bet_on = 1, notes = 'qAv4'
+-- where winner is null
+-- 	and prediction_2_rev_p1_win > 0.7	
+-- 	and ((
+--     	CASE WHEN prediction_3_on > 0.6 THEN 1 ELSE 0 END +
+--     	CASE WHEN prediction_2_p1_win_on > 0.6 THEN 1 ELSE 0 END +
+--     	CASE WHEN lost_won_rate_on > 0.6 THEN 1 ELSE 0 END
+-- 		) >= 2);
 
 	
 	
-update table_tennis_matches 
-set bet_on = 2, notes = 'qAv4'
-where winner is null
-	and prediction_2_rev_p1_win < 0.3
-	and ((
-    	CASE WHEN prediction_3_on < 0.4 THEN 1 ELSE 0 END +
-    	CASE WHEN prediction_2_p1_win_on < 0.4 THEN 1 ELSE 0 END +
-    	CASE WHEN lost_won_rate_on < 0.4 THEN 1 ELSE 0 END
-		) >= 2);
+-- update table_tennis_matches 
+-- set bet_on = 2, notes = 'qAv4'
+-- where winner is null
+-- 	and prediction_2_rev_p1_win < 0.3
+-- 	and ((
+--     	CASE WHEN prediction_3_on < 0.4 THEN 1 ELSE 0 END +
+--     	CASE WHEN prediction_2_p1_win_on < 0.4 THEN 1 ELSE 0 END +
+--     	CASE WHEN lost_won_rate_on < 0.4 THEN 1 ELSE 0 END
+-- 		) >= 2);
 
 
 ----------------------------------------------------------------------------------------------------------
@@ -329,17 +332,17 @@ where winner is null
 
 
 update table_tennis_matches 
-set bet_on = 1, notes = 'qBv5'
+set bet_on = 1, notes = 'qBv7'
 where winner is null
-	and prediction_streak_p1_win >= 0.5
-	and prediction_streak_match_no > 1;
+	and prediction_raw_p1 > 0.6
+	and prediction_raw_count > 3;
 
 
 update table_tennis_matches 
-set bet_on = 2, notes = 'qBv5'
+set bet_on = 2, notes = 'qBv6'
 where winner is null
-	and prediction_streak_p1_win < 0.5
-	and prediction_streak_match_no > 1;
+	and prediction_raw_p1 > 0.4
+	and prediction_raw_count > 3;
 
 ----------------------------------------------------------------------------------------------------------
 --- clear old stall matches --
