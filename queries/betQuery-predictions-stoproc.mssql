@@ -230,49 +230,183 @@ BEGIN
 ----------------------------------------------------------------------------------------------------------
 
 
-	UPDATE table_tennis_matches SET prediction_streak_p1_win = null, prediction_streak_match_no = null;
+-- 		UPDATE table_tennis_matches AS t set prediction_p1_test = null;
+
+-- 		UPDATE table_tennis_matches AS t
+-- 		SET prediction_p1_test =  s.p1_won_sum || '/' || s.p2_won_sum::varchar || '/' || s.match_count::varchar
+-- 		FROM (
+-- 			SELECT
+-- 				p1_won_won, p2_won_won
+-- 				, p1_won_lost, p2_won_lost
+-- 				, p1_lost_won, p2_lost_won
+-- 				, p1_lost_lost, p2_lost_lost
+-- 		--         , h2h_p1 - h2h_p2 as h2h_gap
+-- 				, SUM(CASE WHEN winner = 1 and (set_score = '3-0' or set_score = '0-3') THEN 1.0 ELSE 0 END) AS p1_won_sum
+-- 				, SUM(CASE WHEN winner = 2 and (set_score = '3-0' or set_score = '0-3') THEN 1.0 ELSE 0 END) AS p2_won_sum        
+-- 				, COUNT(*) AS match_count
+-- 			FROM table_tennis_matches
+-- 			WHERE winner IS NOT NULL
+-- 			GROUP BY p1_won_won, p2_won_won
+-- 				, p1_won_lost, p2_won_lost
+-- 				, p1_lost_won, p2_lost_won
+-- 				, p1_lost_lost, p2_lost_lost
+-- 		--         , h2h_p1
+-- 		-- 		, h2h_p2
+
+-- 		) AS s
+-- 		WHERE
+-- 			t.p1_won_won = s.p1_won_won 
+-- 			AND t.p2_won_won = s.p2_won_won
+-- 			AND t.p1_won_lost = s.p1_won_lost
+-- 			AND t.p2_won_lost = s.p2_won_lost
+-- 			AND t.p1_lost_won = s.p1_lost_won
+-- 			AND t.p2_lost_won = s.p2_lost_won
+-- 			AND t.p1_lost_lost = s.p1_lost_lost
+-- 			AND t.p2_lost_lost = s.p2_lost_lost;
+-- 		-- 	AND t.h2h_p1 - t.h2h_p2 = s.h2h_gap
+
+----------------------------------------------------------------------------------------------------------
 
 
+-- 	UPDATE table_tennis_matches SET prediction_streak_p1_win = null, prediction_streak_match_no = null;
+
+
+
+-- 	UPDATE table_tennis_matches AS target
+-- 	SET 
+-- 	  prediction_raw_p1 = stats.percentage,
+-- 	  prediction_raw_win_count = stats.sum_p1_won,
+-- 	  prediction_raw_count = stats.match_count
+-- 	FROM (
+-- 	  SELECT 
+-- 		p1_won_won, p2_won_won
+-- 		, p1_won_lost, p2_won_lost
+-- 		, p1_lost_won, p2_lost_won
+-- 		, p1_lost_lost, p2_lost_lost
+-- 		, p1_p1last, p1_p2last
+-- 		, p2_p1last, p2_p2last
+-- 		, SUM(CASE WHEN winner = 1 THEN 1.0 ELSE 0 END) AS sum_p1_won
+-- 		, AVG(CASE WHEN winner = 1 THEN 1.0 ELSE 0 END) AS percentage
+-- 		, COUNT(*) AS match_count
+-- 	  FROM table_tennis_matches
+-- 	  WHERE winner is not null 
+-- 	  GROUP BY p1_won_won, p2_won_won
+-- 		, p1_won_lost, p2_won_lost
+-- 		, p1_lost_won, p2_lost_won
+-- 		, p1_lost_lost, p2_lost_lost
+-- 		, p1_p1last, p1_p2last
+-- 		, p2_p1last, p2_p2last
+-- 	) AS stats
+-- 	WHERE 
+-- 		target.p1_won_won = stats.p1_won_won 
+-- 		AND target.p2_won_won = stats.p2_won_won
+-- 		AND target.p1_won_lost = stats.p1_won_lost
+-- 		AND target.p2_won_lost = stats.p2_won_lost
+-- 		AND target.p1_lost_won = stats.p1_lost_won
+-- 		AND target.p2_lost_won = stats.p2_lost_won
+-- 		AND target.p1_lost_lost = stats.p1_lost_lost
+-- 		AND target.p2_lost_lost = stats.p2_lost_lost
+-- 		AND target.p1_p1last = stats.p1_p1last
+-- 		AND target.p1_p2last = stats.p1_p2last
+-- 		AND target.p2_p1last = stats.p2_p1last
+-- 		AND target.p2_p2last = stats.p2_p2last;
+
+
+UPDATE table_tennis_matches AS t set clean_sheet_p1_count = null, clean_sheet_p2_count = null;
+
+UPDATE table_tennis_matches AS t
+SET 
+	clean_sheet_p1_count = p1_won_sum
+	, clean_sheet_p2_count = p2_won_sum
+FROM (
+    SELECT
+        h2h_p1
+		, h2h_p2
+		, p1_streak
+		, p2_streak
+        , SUM(CASE WHEN winner = 1 and (set_score = '3-0' or set_score = '0-3') THEN 1.0 ELSE 0 END) AS p1_won_sum
+        , SUM(CASE WHEN winner = 2 and (set_score = '3-0' or set_score = '0-3') THEN 1.0 ELSE 0 END) AS p2_won_sum        
+		, COUNT(*) AS match_count
+    FROM table_tennis_matches
+    WHERE winner IS NOT NULL
+  	GROUP BY 
+        h2h_p1
+		, h2h_p2
+		, p1_streak
+		, p2_streak
+
+) AS s
+WHERE
+	t.h2h_p1 = s.h2h_p1 
+	AND t.h2h_p2 = s.h2h_p2	  
+	AND t.p1_streak = s.p1_streak
+	AND t.p2_streak = s.p2_streak;
+
+----------------------------------------------------------------------------------------------------------
+
+
+UPDATE table_tennis_matches AS t set prediction_raw_p1 = null;
+
+UPDATE table_tennis_matches AS t
+SET 
+	prediction_raw_p1 =  avggg
+	, prediction_raw_count =  match_count
+FROM (
+    SELECT
+        clean_sheet_p1_count
+		, clean_sheet_p2_count
+		, h2h_streak_match_count
+        , AVG(CASE WHEN winner = 1 THEN 1.0 ELSE 0 END) AS avggg        
+		, COUNT(*) AS match_count
+    FROM table_tennis_matches
+    WHERE winner IS NOT NULL
+  	GROUP BY 
+        clean_sheet_p1_count
+		, clean_sheet_p2_count
+		, h2h_streak_match_count
+
+) AS s
+WHERE
+	t.clean_sheet_p1_count = s.clean_sheet_p1_count
+	and t.clean_sheet_p2_count = s.clean_sheet_p2_count
+	and t.h2h_streak_match_count = s.h2h_streak_match_count;
+
+
+----------------------------------------------------------------------------------------------------------
+
+	UPDATE table_tennis_matches set h2h_streak_win_rate = null, h2h_streak_match_count = null;
 
 	UPDATE table_tennis_matches AS target
 	SET 
-	  prediction_raw_p1 = stats.percentage,
-	  prediction_raw_win_count_on = stats.sum_p1_won,
-	  prediction_raw_count = stats.match_count
+	  h2h_streak_win_rate = stats.percentage,
+	  h2h_streak_match_count = stats.match_count
 	FROM (
 	  SELECT 
-		p1_won_won, p2_won_won
-		, p1_won_lost, p2_won_lost
-		, p1_lost_won, p2_lost_won
-		, p1_lost_lost, p2_lost_lost
-		, p1_p1last, p1_p2last
-		, p2_p1last, p2_p2last
-		, SUM(CASE WHEN winner = 1 THEN 1.0 ELSE 0 END) AS sum_p1_won
+		h2h_p1
+		, h2h_p2
+	-- 	, bm_p1
+	-- 	, bm_p2
+
+		, p1_streak
+		, p2_streak
+	-- 	, l10_p1 - l10_p2 as l10_gap
+	-- 	, l30_p1 - l30_p2 as l30_gap
+
 		, AVG(CASE WHEN winner = 1 THEN 1.0 ELSE 0 END) AS percentage
 		, COUNT(*) AS match_count
 	  FROM table_tennis_matches
 	  WHERE winner is not null 
-	  GROUP BY p1_won_won, p2_won_won
-		, p1_won_lost, p2_won_lost
-		, p1_lost_won, p2_lost_won
-		, p1_lost_lost, p2_lost_lost
-		, p1_p1last, p1_p2last
-		, p2_p1last, p2_p2last
+	  GROUP BY h2h_p1, h2h_p2, p1_streak, p2_streak 
 	) AS stats
 	WHERE 
-		target.p1_won_won = stats.p1_won_won 
-		AND target.p2_won_won = stats.p2_won_won
-		AND target.p1_won_lost = stats.p1_won_lost
-		AND target.p2_won_lost = stats.p2_won_lost
-		AND target.p1_lost_won = stats.p1_lost_won
-		AND target.p2_lost_won = stats.p2_lost_won
-		AND target.p1_lost_lost = stats.p1_lost_lost
-		AND target.p2_lost_lost = stats.p2_lost_lost
-		AND target.p1_p1last = stats.p1_p1last
-		AND target.p1_p2last = stats.p1_p2last
-		AND target.p2_p1last = stats.p2_p1last
-		AND target.p2_p2last = stats.p2_p2last;
-		
+		target.h2h_p1 = stats.h2h_p1 
+		AND target.h2h_p2 = stats.h2h_p2
+
+	-- 	AND target.bm_p1 = stats.bm_p1
+	-- 	AND target.bm_p2 = stats.bm_p2
+
+		AND target.p1_streak = stats.p1_streak
+		AND target.p2_streak = stats.p2_streak;
 
 ----------------------------------------------------------------------------------------------------------
 
@@ -285,9 +419,14 @@ update table_tennis_matches set prediction_2_rev_p1_win_on = prediction_2_rev_p1
 update table_tennis_matches set prediction_2_rev_match_no_on = prediction_2_rev_match_no where winner is null;
 update table_tennis_matches set lost_won_rate_on = lost_won_rate where winner is null;
 update table_tennis_matches set lost_won_count_on = lost_won_count where winner is null;
-update table_tennis_matches set prediction_raw_p1 = prediction_raw_p1 where winner is null;
-update table_tennis_matches set prediction_raw_win_count_on = prediction_raw_win_count_on where winner is null;
+update table_tennis_matches set h2h_streak_win_rate_on = h2h_streak_win_rate where winner is null;
+update table_tennis_matches set h2h_streak_match_count_on = h2h_streak_match_count where winner is null;
+
+update table_tennis_matches set prediction_raw_p1_on = prediction_raw_p1 where winner is null;
 update table_tennis_matches set prediction_raw_count_on = prediction_raw_count where winner is null;
+
+-- update table_tennis_matches set prediction_raw_win_count_on = prediction_raw_win_count_on where winner is null;
+-- update table_tennis_matches set prediction_p1_test_on = prediction_p1_test where winner is null;
 
 ----------------------------------------------------------------------------------------------------------
 --- qA ---
@@ -330,25 +469,29 @@ update table_tennis_matches set prediction_raw_count_on = prediction_raw_count w
 ----------------------------------------------------------------------------------------------------------
 -- qB ---
 
+------------------------
+--- ALWAYS CASHOUT ON --
+--- 2v2 + (x v x+2) ----
+------------------------
 
 update table_tennis_matches 
-set bet_on = 1, notes = 'qBv7'
+set bet_on = 1, notes = 'qBv12'
 where winner is null
-	and h2h_p1 > h2h_p2
-	and prediction_3_on > 0.5
-	and prediction_2_p1_win_on > 0.5
-	and lost_won_rate_on > 0.6
-	and prediction_2_rev_p1_win > 0.5;
+	and prediction_raw_p1 > 0.7
+	and h2h_streak_match_count_on > 1
+	and prediction_3 > 0.4;
 
 
 update table_tennis_matches 
-set bet_on = 2, notes = 'qBv7'
+set bet_on = 2, notes = 'qBv12'
 where winner is null
-	and h2h_p2 > h2h_p1
-	and prediction_3_on < 0.5
-	and prediction_2_p1_win_on < 0.5
-	and lost_won_rate_on < 0.4
-	and prediction_2_rev_p1_win < 0.5;
+	and prediction_raw_p1 < 0.3
+	and h2h_streak_match_count_on > 1
+  	and h2h_streak_win_rate_on < 0.8
+  	and prediction_3_on < 0.8
+  	and lost_won_rate < 0.75
+  	and prediction_2_p1_win_on < 0.8;
+
 
 ----------------------------------------------------------------------------------------------------------
 --- clear old stall matches --
