@@ -53,6 +53,7 @@ provider:
         - "arn:aws:s3:::bet365-table-tennis/*"
         - "arn:aws:sqs:ap-southeast-2:146261234111:table-tennis-match-schedule-queue"
         - "arn:aws:ses:ap-southeast-2:146261234111:identity/michaelclairine@gmail.com"
+        - "arn:aws:ses:ap-southeast-2:146261234111:identity/togetherwin.com.au"
  # SQS Queue ARN
 
 

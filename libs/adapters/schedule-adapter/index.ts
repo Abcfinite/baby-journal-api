@@ -1634,9 +1634,9 @@ export default class ScheduleAdapter {
 
   async getSafeMatches() {
     var safeMatchesTTResult = await getTTSafeMatches()
-    // if (safeMatchesTTResult.length === 0) { 
-    //   return 'no match found, email not sent'
-    // }
+    if (safeMatchesTTResult.length === 0) { 
+      return 'no match found, email not sent'
+    }
 
 
     const ses = new SESClient({ region: "ap-southeast-2" });
@@ -1645,7 +1645,7 @@ export default class ScheduleAdapter {
     const emailParams = {
         Source: "matches@togetherwin.com.au", // The verified sender's email
         Destination: {
-            ToAddresses: ["michaelfebrianto@gmail.com"]
+            ToAddresses: ["matches@togetherwin.com.au", "michaelfebrianto@gmail.com"]
         },
         Message: {
             Body: {
