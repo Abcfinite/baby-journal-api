@@ -262,7 +262,7 @@ from table_tennis_matches
 where winner is null
 )
 where bet_on is not null
-    and match_time > (now() AT TIME ZONE 'AEST' - INTERVAL '30 minutes')
+    and match_time > (now() AT TIME ZONE 'AEST')
 
 order by match_time desc`
 
