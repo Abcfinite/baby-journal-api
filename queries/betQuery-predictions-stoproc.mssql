@@ -534,22 +534,24 @@ where winner is null
 
 -- accuracy : 0.73
 update table_tennis_matches 
-set bet_on = 1, notes = 'qCv1'
+set bet_on = 1, notes = 'qCv2'
 where winner is null
 	and h2h_p1 > h2h_p2
 	and plast_score > 0
-	and streak_score > 0
+	and streak_score > 0 and streak_score < 5
 	and pwon_last_score > 0
-	and prediction_raw_p1_on > 0.5;
+	and prediction_raw_p1 > 0.5
+	and h2h_streak_win_rate > 0.5;
 
 update table_tennis_matches 
-set bet_on = 2, notes = 'qCv1'
+set bet_on = 2, notes = 'qCv2'
 where winner is null
 	and h2h_p1 < h2h_p2
 	and plast_score < 0
-	and streak_score < 0
-	and pwon_last_score < 0
-	and prediction_raw_p1_on < 0.5;
+	and streak_score < 0 and streak_score > -5
+	and pwon_last_score < 0 
+	and prediction_raw_p1 < 0.5
+	and h2h_streak_win_rate < 0.5;
 
 
 ----------------------------------------------------------------------------------------------------------

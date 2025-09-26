@@ -215,6 +215,12 @@ select
 	
 	, p1_name, p2_name
 
+    , prediction_raw_p1
+	, prediction_raw_count
+
+    , prediction_h2h_scores_rate
+	, prediction_h2h_scores_count
+
 	, prediction_streak_p1_win
 	, prediction_streak_match_no
 	
