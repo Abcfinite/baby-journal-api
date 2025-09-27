@@ -476,26 +476,20 @@ update table_tennis_matches set prediction_raw_count_on = prediction_raw_count w
 	-- this is save bet for 2 matches already
 
 update table_tennis_matches 
-set bet_on = 1, notes = 'qAv5'
+set bet_on = 1, notes = 'qAv6'
 where winner is null
-	and prediction_2_rev_p1_win_on > 0.6
-	and prediction_2_rev_p1_win_count > 1
-	and prediction_2_p1_win_on > 0.68
-	and streak_score > 2
-	and plast_score > 2
-	and pwon_last_score > 3;
+	and h2h_streak_win_rate > 0.6
+	and prediction_2_p1_win > 0.6
+	and ( prediction_h2h_scores_rate > 0.6 or prediction_h2h_scores_rate is null );
 
 	
 	
 -- update table_tennis_matches 
--- set bet_on = 2, notes = 'qAv4'
+-- set bet_on = 2, notes = 'qAv6'
 -- where winner is null
--- 	and prediction_2_rev_p1_win < 0.3
--- 	and ((
---     	CASE WHEN prediction_3_on < 0.4 THEN 1 ELSE 0 END +
---     	CASE WHEN prediction_2_p1_win_on < 0.4 THEN 1 ELSE 0 END +
---     	CASE WHEN lost_won_rate_on < 0.4 THEN 1 ELSE 0 END
--- 		) >= 2);
+-- 	and h2h_streak_win_rate < 0.4
+-- 	and prediction_2_p1_win < 0.4
+-- 	and ( prediction_h2h_scores_rate < 0.4 or prediction_h2h_scores_rate is null );
 
 
 ----------------------------------------------------------------------------------------------------------
@@ -533,45 +527,50 @@ where winner is null
 ----------------------------------------------------------------------------------------------------------
 
 -- accuracy : 0.73
+-- qCv2 not stable : 
+	-- 2025.09.26 - 0.42 (5/12)
+	-- 2025.09.25 - 0.89 (16/18)
+		
 update table_tennis_matches 
-set bet_on = 1, notes = 'qCv2'
+set bet_on = 1, notes = 'qCv3'
 where winner is null
-	and h2h_p1 > h2h_p2
-	and plast_score > 0
-	and streak_score > 0 and streak_score < 5
-	and pwon_last_score > 0
-	and prediction_raw_p1 > 0.5
-	and h2h_streak_win_rate > 0.5;
+	and h2h_p1 - h2h_p2 > 2
+   	and h2h_streak_win_rate > 0.6
+	and prediction_2_p1_win > 0.6;
 
 update table_tennis_matches 
-set bet_on = 2, notes = 'qCv2'
+set bet_on = 2, notes = 'qCv3'
 where winner is null
-	and h2h_p1 < h2h_p2
-	and plast_score < 0
-	and streak_score < 0 and streak_score > -5
-	and pwon_last_score < 0 
-	and prediction_raw_p1 < 0.5
-	and h2h_streak_win_rate < 0.5;
+	and h2h_p2 - h2h_p1 > 2
+   	and h2h_streak_win_rate < 0.4
+	and prediction_2_p1_win < 0.4;
 
 
 ----------------------------------------------------------------------------------------------------------
 
--- accuracy : 0.5
--- update table_tennis_matches 
--- set bet_on = 1, notes = 'qDv1'
--- where winner is null
--- 	and prediction_raw_p1 > 0.5
--- 	and prediction_raw_count > 2
--- 	and prediction_h2h_scores_rate > 0.5
--- 	and prediction_h2h_scores_count > 2;
+-- qDv1 accuracy : 0.5
 
--- update table_tennis_matches 
--- set bet_on = 2, notes = 'qDv1'
--- where winner is null
--- 	and prediction_raw_p1 < 0.5
--- 	and prediction_raw_count > 2
--- 	and prediction_h2h_scores_rate < 0.5
--- 	and prediction_h2h_scores_count > 2;
+update table_tennis_matches 
+set bet_on = 1, notes = 'qDv2'
+where winner is null
+	and LENGTH(p1_p1last) > 0
+	and LENGTH(p1_p2last) > 0
+	and LENGTH(p2_p1last) > 0
+	and LENGTH(p2_p2last) > 0
+   	and h2h_streak_win_rate > 0.7
+   	and prediction_raw_p1 > 0.7
+   	and prediction_2_p1_win > 0.5;
+
+update table_tennis_matches
+set bet_on = 2, notes = 'qDv2'
+where winner is null
+	and LENGTH(p1_p1last) > 0
+	and LENGTH(p1_p2last) > 0
+	and LENGTH(p2_p1last) > 0
+	and LENGTH(p2_p2last) > 0
+   	and h2h_streak_win_rate < 0.3
+   	and prediction_raw_p1 < 0.3
+   	and prediction_2_p1_win < 0.5;
 
 
 ----------------------------------------------------------------------------------------------------------

@@ -1638,6 +1638,9 @@ export default class ScheduleAdapter {
       return 'no match found, email not sent'
     }
 
+    const warning = [{ "warning": "DO NOT BET IF STILL PLAYING. LOST $10" }]
+    const matchesCount = [{ "count": safeMatchesTTResult.length }]
+    const data = [...warning, ...matchesCount, ...safeMatchesTTResult]
 
     const ses = new SESClient({ region: "ap-southeast-2" });
 
@@ -1649,7 +1652,7 @@ export default class ScheduleAdapter {
         },
         Message: {
             Body: {
-                Text: { Data: JSON.stringify(safeMatchesTTResult, null, 2) }
+                Text: { Data: JSON.stringify(data, null, 2) }
             },
           Subject: { Data: 'time to bet' }
         }
