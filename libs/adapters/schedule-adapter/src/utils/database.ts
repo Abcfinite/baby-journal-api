@@ -215,6 +215,9 @@ select
 	
 	, p1_name, p2_name
 
+	, h2h_streak_win_rate
+	, h2h_streak_match_count
+
     , prediction_raw_p1
 	, prediction_raw_count
 

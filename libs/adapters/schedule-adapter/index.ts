@@ -1638,17 +1638,22 @@ export default class ScheduleAdapter {
       return 'no match found, email not sent'
     }
 
-    const warning = [{ "warning": "DO NOT BET IF STILL PLAYING. LOST $10" }]
+    const warning = [{
+      "warning": "DO NOT BET IF STILL PLAYING. LOST $10",
+      "CASHOUT": "2v0, 2v1, 2v2+2 is a MUST"
+    }]
     const matchesCount = [{ "count": safeMatchesTTResult.length }]
     const data = [...warning, ...matchesCount, ...safeMatchesTTResult]
 
+    const s3ClientCustom = new S3ClientCustom()
+    await s3ClientCustom.deleteAllFiles('safe-matches')
+    await s3ClientCustom.putFile('safe-matches', 'matches.json', JSON.stringify(data))
+
     const ses = new SESClient({ region: "ap-southeast-2" });
-
-
     const emailParams = {
         Source: "matches@togetherwin.com.au", // The verified sender's email
         Destination: {
-            ToAddresses: ["matches@togetherwin.com.au", "michaelfebrianto@gmail.com"]
+          ToAddresses: ["matches@togetherwin.com.au"]
         },
         Message: {
             Body: {
@@ -1658,6 +1663,7 @@ export default class ScheduleAdapter {
         }
     };
 
+    
     try {
         const command = new SendEmailCommand(emailParams);
         const data = await ses.send(command);
