@@ -51,6 +51,8 @@ provider:
         - "arn:aws:s3:::esports-match-schedule/*"
         - "arn:aws:s3:::bet365-table-tennis" # Resource for s3:ListBucket
         - "arn:aws:s3:::bet365-table-tennis/*"
+        - "arn:aws:s3:::safe-matches" # Resource for s3:ListBucket
+        - "arn:aws:s3:::safe-matches/*"
         - "arn:aws:sqs:ap-southeast-2:146261234111:table-tennis-match-schedule-queue"
         - "arn:aws:ses:ap-southeast-2:146261234111:identity/michaelclairine@gmail.com"
         - "arn:aws:ses:ap-southeast-2:146261234111:identity/togetherwin.com.au"

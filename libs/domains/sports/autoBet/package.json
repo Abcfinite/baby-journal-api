@@ -1,0 +1,44 @@
+{
+  "name": "events-auto_bet",
+  "version": "1.0.0",
+  "author": "abraham cole finite <abrahamfinite@gmail.com>",
+  "dependencies": {},
+  "devDependencies": {
+    "@playwright/test": "^1.55.1",
+    "playwright": "^1.55.1"
+  },
+  "scripts": {
+    "start": "ts-node index.ts"
+  },
+  "jest": {
+    "verbose": true,
+    "transform": {
+      "^.+\\.(t|j)sx?$": [
+        "@swc/jest"
+      ]
+    },
+    "testEnvironment": "node",
+    "roots": [
+      "<rootDir>"
+    ],
+    "collectCoverageFrom": [
+      "<rootDir>/lib/**/*.{js,ts}",
+      "<rootDir>/index.ts"
+    ],
+    "testMatch": [
+      "<rootDir>/test/**/?(*.)(spec|test).{js,ts}"
+    ],
+    "coverageDirectory": "<rootDir>/coverage",
+    "moduleFileExtensions": [
+      "ts",
+      "js",
+      "json"
+    ],
+    "rootDir": ".",
+    "moduleDirectories": [
+      "node_modules",
+      "test",
+      "src"
+    ]
+  }
+}

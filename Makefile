@@ -17,4 +17,4 @@ offline: $(ENVFILE) $(NODE_MODULES_DIR)
 #############
 
 _deps:
-	yarn install --no-bin-links
+	yarn install

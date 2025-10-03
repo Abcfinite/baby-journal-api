@@ -1645,10 +1645,6 @@ export default class ScheduleAdapter {
     const matchesCount = [{ "count": safeMatchesTTResult.length }]
     const data = [...warning, ...matchesCount, ...safeMatchesTTResult]
 
-    const s3ClientCustom = new S3ClientCustom()
-    await s3ClientCustom.deleteAllFiles('safe-matches')
-    await s3ClientCustom.putFile('safe-matches', 'matches.json', JSON.stringify(data))
-
     const ses = new SESClient({ region: "ap-southeast-2" });
     const emailParams = {
         Source: "matches@togetherwin.com.au", // The verified sender's email
@@ -1666,9 +1662,15 @@ export default class ScheduleAdapter {
     
     try {
         const command = new SendEmailCommand(emailParams);
-        const data = await ses.send(command);
-        console.log("Email sent successfully. MessageId:", data.MessageId);
-        return { statusCode: 200, body: "Email sent!" };
+        const sendResponse = await ses.send(command);
+        console.log("Email sent successfully. MessageId:", sendResponse.MessageId);
+      
+        const s3ClientCustom = new S3ClientCustom()
+        await s3ClientCustom.deleteAllFiles('safe-matches')
+        await s3ClientCustom.putFile('safe-matches', 'matches.json', JSON.stringify(data))
+        console.log('file stored in s3');
+      
+        return { statusCode: 200, body: "Email sent and file is stored" };
     } catch (error) {
         console.error("Failed to send email:", error);
         return { statusCode: 500, body: "Email failed to send." };
