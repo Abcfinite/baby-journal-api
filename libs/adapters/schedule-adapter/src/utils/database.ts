@@ -271,7 +271,7 @@ from table_tennis_matches
 where winner is null
 )
 where bet_on is not null
-    and match_time > (now() AT TIME ZONE 'AEST')
+    and match_time > (now() AT TIME ZONE 'Australia/Sydney')
 
 order by match_time desc`
 

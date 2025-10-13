@@ -1058,7 +1058,8 @@ export default class ScheduleAdapter {
 
     if (sqsMessageNumber === 0) {
       for await (const event of events) {
-        const eventDateTime = new Date(parseInt(event.time) * 1000).toLocaleString('en-GB', { timeZone: 'Australia/Sydney' })
+        // const eventDateTime = new Date(parseInt(event.time) * 1000).toLocaleString('en-GB', { timeZone: 'Australia/Sydney' })
+                const eventDateTime = new Date(parseInt(event.time) * 1000).toLocaleString('en-GB', { timeZone: 'Australia/Sydney' })
 
         if (event.player1.name.includes('/')) {
           continue

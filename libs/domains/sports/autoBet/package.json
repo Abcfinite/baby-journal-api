@@ -2,10 +2,9 @@
   "name": "events-auto_bet",
   "version": "1.0.0",
   "author": "abraham cole finite <abrahamfinite@gmail.com>",
-  "dependencies": {},
-  "devDependencies": {
-    "@playwright/test": "^1.55.1",
-    "playwright": "^1.55.1"
+  "dependencies": {
+    "jimp": "^1.6.0",
+    "robotjs": "^0.6.0"
   },
   "scripts": {
     "start": "ts-node index.ts"
