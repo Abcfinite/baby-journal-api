@@ -60,9 +60,11 @@ export default class PlayerAdapter {
     const player2MatchesSum = await new BetapiClient().getPlayerEndedMatches(player2Id, sportEvent.type)
 
     var prematchOdds = null
-    // if (sportEvent.bet365EventId) {
-    //   prematchOdds = await new BetapiClient().getPrematchOddEventId(sportEvent.bet365EventId)
-    // }
+    if (sportEvent.id) {
+      prematchOdds = await new BetapiClient().getEventPrematchOdd(sportEvent.id, '92') // 92 type for table_tennis
+    }
+
+    console.log('>>>>>>>>>prematchOdds', prematchOdds)
 
     const player1Matches = player1MatchesSum.events
     const player2Matches = player2MatchesSum.events
@@ -146,6 +148,9 @@ export default class PlayerAdapter {
     const uniquePlayerNames1 = player1matchesP1Names.concat(player1matchesP2Names).filter((e, i, self) => i === self.indexOf(e))
     const uniquePlayerNames2 = player2matchesP1Names.concat(player2matchesP2Names).filter((e, i, self) => i === self.indexOf(e))
 
+    // const player1Last2 = player1Matches.slice(0, 2)
+    // const player2Last2 = player2Matches.slice(0, 2)
+
 
     const bmPlayerIds = uniquePlayerIds1.filter(
       (element) => uniquePlayerIds2.includes(element))
@@ -192,6 +197,8 @@ export default class PlayerAdapter {
     const p2BMF = p2BM.filter((e, i, self) => i === self.indexOf(e)).length
     const h2hP2 = h2hNo - h2hP1Won
     const h2hLastWinner = h2hP1WonLast ? 1 : 2
+
+
 
     // const oddP1WinA = player1Last8.filter(p1l8 => p1l8.player1.id === player1Id && p1l8.player1won).map(p1l8 => p1l8.odd.prematchOddP1)
     // const oddP1WinB = player1Last8.filter(p1l8 => p1l8.player1.id !== player1Id && !p1l8.player1won).map(p1l8 => p1l8.odd.prematchOddP2)
@@ -316,8 +323,8 @@ export default class PlayerAdapter {
       "p2Id": player2Id,
       "p1Name": player1Name,
       "p2Name": player2Name,
-      "p1Odd": 0,
-      "p2Odd": 0,
+      "p1Odd": Number(prematchOdds['prematchOddP1']) || null,
+      "p2Odd": Number(prematchOdds['prematchOddP2']) || null,
       "h2hP1": h2hP1Won,
       h2hP2,
       h2hLastWinner,

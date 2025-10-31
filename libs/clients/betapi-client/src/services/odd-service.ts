@@ -13,7 +13,22 @@ export default class OddService {
     )
 
     const data = JSON.parse(resultFirstPage.value.toString())
-    const startOdds = data['results']['Bet365']['odds']['start']
+    var startOdds = data['results']['Bet365']
+    if (startOdds === undefined) {
+      startOdds = data['results']['CloudBet']
+    }
+    if (startOdds === undefined) {
+      startOdds = data['results']['DraftKings']
+    }
+    if (startOdds === undefined) {
+      startOdds = data['results']['Duelbits']
+    }
+    if (startOdds === undefined) {
+      startOdds = data['results']['FonBet']
+    }
+
+
+    startOdds = startOdds['odds']['start']
 
     if (type === '13') {
       return OddParser.parse(startOdds['13_1'])
