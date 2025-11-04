@@ -809,24 +809,72 @@ update table_tennis_matches set prediction_4_p1_count_on = prediction_4_p1_count
 ----------------------------------------------------------------------------------------------------------
 
 
+
+WITH t_to_update AS (
+    -- 1. Identify the rows and calculate the stat columns ONCE
+    SELECT
+        t.id
+        , greatest(t.prediction_p1_win_on, t.h2h_streak_win_rate_on, t.prediction_2_p1_win_on, t.prediction_l10_p1_win_on, t.prediction_2_rev_p1_win_on) AS great
+        , least(t.prediction_p1_win_on, t.h2h_streak_win_rate_on, t.prediction_2_p1_win_on, t.prediction_l10_p1_win_on, t.prediction_2_rev_p1_win_on) AS lest
+        , t.prediction_p1_win_on + t.h2h_streak_win_rate_on + t.prediction_2_p1_win_on + t.prediction_l10_p1_win_on + t.prediction_2_rev_p1_win_on AS multi
+    FROM
+        table_tennis_matches AS t
+    WHERE
+        DATE(match_time) = DATE((NOW() AT TIME ZONE 'Australia/Sydney'))
+--         AND t.winner IS NULL
+),
+t_with_stats AS (
+    -- 2. Join the identified rows (t) to similar historical rows (s_inner)
+    SELECT
+        t.id,
+        s.p1_won_avg,
+        s.p1_won_sum,
+        s.match_count
+    FROM
+        t_to_update AS t
+    CROSS JOIN LATERAL (
+        SELECT
+            AVG(CASE WHEN s_inner.winner = 1 THEN 1.0 ELSE 0 END) AS p1_won_avg,
+            SUM(CASE WHEN s_inner.winner = 1 THEN 1.0 ELSE 0 END) AS p1_won_sum,
+            COUNT(*) AS match_count
+        FROM
+            table_tennis_matches AS s_inner
+        WHERE
+            s_inner.winner IS NOT NULL
+            -- FIX: Recalculate the comparison stats for the historical row (s_inner)
+            AND ABS(t.great - greatest(s_inner.prediction_p1_win_on, s_inner.h2h_streak_win_rate_on, s_inner.prediction_2_p1_win_on, s_inner.prediction_l10_p1_win_on, s_inner.prediction_2_rev_p1_win_on)) < 0.02
+            AND ABS(t.lest - least(s_inner.prediction_p1_win_on, s_inner.h2h_streak_win_rate_on, s_inner.prediction_2_p1_win_on, s_inner.prediction_l10_p1_win_on, s_inner.prediction_2_rev_p1_win_on)) < 0.02
+            AND ABS(t.multi - (s_inner.prediction_p1_win_on + s_inner.h2h_streak_win_rate_on + s_inner.prediction_2_p1_win_on + s_inner.prediction_l10_p1_win_on + s_inner.prediction_2_rev_p1_win_on)) < 0.02
+    ) AS s
+    WHERE s.match_count > 0
+)
+-- 3. Perform the UPDATE using the calculated stats from the CTE
+UPDATE table_tennis_matches AS t
+SET
+    prediction_great_p1_win = ts.p1_won_avg,
+    prediction_great_p1_count = ts.match_count
+FROM
+    t_with_stats AS ts
+WHERE
+    t.id = ts.id;
+
+
+
+----------------------------------------------------------------------------------------------------------
 	
---- getting medium to high odd
--- update table_tennis_matches 
--- set bet_on = 1, notes = 'qAv17'
--- where winner is null
--- 	and prediction_l10_p1_win_on > 0.65
--- 	and prediction_p1_odd_win_on > 0
--- 	and prediction_2_rev_p1_win_on > 0
--- 	and prediction_p1_win_on > 0.5
--- 	and odd_p1 > 1.5;
+-- qCv11 :
+	-- 2025.11.04 - 0.77 (35)
 
 
 update table_tennis_matches
-set bet_on = 2, notes = 'qAv19'
+set bet_on = 2, notes = COALESCE(notes, '') || 'qAv22 '
 where winner is null
-	and prediction_p1_odd_win < 0.3
-	and prediction_p1_win_on < 0.7;
-	
+	and bet_on is null
+	and prediction_p1_odd_only_win < 0.4
+	and prediction_l10_p1_win_on < 0.4;
+
+
+-- 	and odd_p2 < 1.6;
 
 
 
@@ -834,56 +882,16 @@ where winner is null
 -- qB ---
 
 -- 2.1 v 1.6
--- update table_tennis_matches 
--- set bet_on = 1, notes = 'qBv24'
--- where winner is null	
--- 	and prediction_2_rev_p1_win_on > 0.7;
 
-
--- update table_tennis_matches 
--- set bet_on = 2, notes = 'qBv28'
--- where winner is null
--- 	and odd_p2 > 1.6
--- 	and odd_p2 < 1.7
--- 	and prediction_p1_win_on < 0.83
--- 	and prediction_p1_odd_only_win < 0.5
--- 	and prediction_2_rev_p1_win_on < 0.8
--- 	and streak_score > -6
--- 	and h2h_streak_win_rate_on < 0.7;
-
--- update table_tennis_matches
--- set bet_on = 2, notes = 'qBv28'
--- where winner is null
--- 	and odd_p1 > 1.6
--- 	and odd_p1 < 1.7
--- 	and streak_score > -6
--- 	and prediction_p1_win_on < 0.4
--- 	and prediction_2_rev_p1_win_on < 0.5;
-
-
--- update table_tennis_matches 
--- set bet_on = 1, notes = 'qBv30'
--- where winner is null
--- 	and prediction_4_p1_win > 0.7
--- 	and prediction_2_p1_win_on > 0.5
--- 	and prediction_4_p1_count > 1;
-
-
-
--- update table_tennis_matches
--- set bet_on = 2, notes = 'qBv31'
--- where winner is null
--- 	and prediction_4_p1_win_on < 0.3
--- 	and prediction_4_p1_count_on > 1
--- 	and prediction_p1_odd_only_win < 0.45
--- 	and prediction_p1_win_on < 0.5;
-
-
-
--- too mucn not enough match (5 only)
--- 	and prediction_2_p1_win_on < 0.3
--- 	and prediction_l10_p1_win_on < 0.3;
-
+update table_tennis_matches
+set bet_on = 2, notes = COALESCE(notes, '') || 'qBv32 '
+where winner is null
+	and bet_on is null
+	and odd_p2 > odd_p1
+	and prediction_p1_odd_only_win < 0.5
+	and lost_won_rate_on < 0.5
+	and h2h_streak_win_rate_on < 0.5
+	and prediction_p1_odd_win_on < 0.6;
 
 
 
@@ -946,64 +954,78 @@ where winner is null
 -- qCv2 not stable : 
 	-- 2025.09.26 - 0.42 (5/12)
 	-- 2025.09.25 - 0.89 (16/18)
+-- qCv11 :
+	-- 2025.11.04 - 0.6 (15)
 		
 -- accurate but too gain is too small
 
 update table_tennis_matches 
-set bet_on = 1, notes = 'qCv8'
+set bet_on = 2, notes = COALESCE(notes, '') || 'qCv11 '
 where winner is null
-	and lost_won_rate_on > 0.6
-	and lost_won_count > 1
-	and prediction_l10_p1_win_on > 0.4
-	and ( prediction_4_p1_win_on > 0 and prediction_p1_win_on > 0 )
-	and pwon_last_score < 3
-	and plast_score > -8
-	and streak_score < 6
-	and odd_p1 > 2;
+	and bet_on is null
+	and p1_lost_lost - p2_lost_lost > 2
+	and p1_lost_lost > 0
+	and prediction_p1_odd_only_win < 0.5;
 
-
-
--- update table_tennis_matches 
--- set bet_on = 2, notes = 'qCv7'
--- where winner is null
--- 	and lost_won_rate < 0.4
--- 	and lost_won_count > 1
--- 	and odd_p2 > 2;
-
+-- 	and prediction_p1_odd_only_win < 0.5
+-- 	and prediction_l10_p1_win_on < 0.7
+-- 	and streak_score > -8
+-- 	and odd_p2 > 1.6
+-- 	and odd_p2 < 1.7;
 
 
 
 ----------------------------------------------------------------------------------------------------------
 
--- qDv1 accuracy : 0.5
--- qDv2 lost when odd 1.14
-
--- accurate but too gain is too small
-
--- update table_tennis_matches 
--- set bet_on = 1, notes = 'qDv6'
--- where winner is null
--- 	and lost_won_rate_on > 0.6
--- 	and lost_won_count_on > 1
--- 	and odd_p1 < 1.8
-	
--- 	and streak_score < 7
--- 	and plast_score <> 0
-	
--- 	and prediction_p1_odd_only_win > 0.5;
+--- based on updated odds
+-- qDv9 :
+	-- 2025.11.04 - 0.71 (7)
 
 
--- update table_tennis_matches
--- set bet_on = 2, notes = 'qDv6'
--- where winner is null
--- 	and lost_won_rate_on < 0.3
--- 	and lost_won_count_on > 1
--- 	and odd_p2 < 1.8
-	
--- 	and streak_score > -7
--- 	and plast_score <> 0
-	
--- 	and prediction_p1_odd_only_win < 0.5;
+update table_tennis_matches 
+set bet_on = 1, notes = COALESCE(notes, '') || 'qDv9 '
+where winner is null
+	and bet_on is null
+	and odd_p1_2 < odd_p1
+	and prediction_p1_odd_only_win > 0.6;
+
+
+update table_tennis_matches 
+set bet_on = 2, notes = COALESCE(notes, '') || 'qDv9 '
+where winner is null
+	and bet_on is null
+	and odd_p2_2 < odd_p2
+	and prediction_p1_odd_only_win < 0.35;
+
+
+----------------------------------------------------------------------------------------------------------
+
+
+
+
+--- based on updated odds
+-- qEv1 : 
+	-- 2025.11.04 - 0.6 (69)
+
+
+update table_tennis_matches 
+set bet_on = 1, notes = COALESCE(notes, '') || 'qEv2'
+where winner is null
+	and bet_on is null
+	and prediction_great_p1_win > 0.5
+	and great > 0.5
+	and lest > 0.5;
+
+
+update table_tennis_matches 
+set bet_on = 2, notes = COALESCE(notes, '') || 'qEv2'
+where winner is null
+	and bet_on is null
+	and prediction_great_p1_win < 0.5
+	and great < 0.5
+	and lest < 0.5;
+
+
 
 
 ----------------------------------------------------------------------------------------------------------
