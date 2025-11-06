@@ -19,9 +19,9 @@ export default class BetapiClient {
     return await new EndedService().getEndedEventBasedOnEventId(eventId, pId)
   }
 
-  async getPrematchOddEventId(eventId: string): Promise<Odds> {
-    return await new OddService().getPrematchOddEventId(eventId)
-  }
+  // async getPrematchOddEventId(eventId: string): Promise<Odds> {
+  //   return await new OddService().getPrematchOddEventId(eventId)
+  // }
 
   async getEventPrematchOdd(eventId: string, type: string): Promise<Odds> {
     return await new OddService().getOddSummaryEventId(eventId, type)

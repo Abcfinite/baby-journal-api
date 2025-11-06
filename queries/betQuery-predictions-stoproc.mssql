@@ -862,7 +862,7 @@ WHERE
 
 ----------------------------------------------------------------------------------------------------------
 	
--- qCv11 :
+-- qAv22 :
 	-- 2025.11.04 - 0.77 (35)
 
 
@@ -872,10 +872,7 @@ where winner is null
 	and bet_on is null
 	and prediction_p1_odd_only_win < 0.4
 	and prediction_l10_p1_win_on < 0.4;
-
-
--- 	and odd_p2 < 1.6;
-
+-- still won even when great is 1.0 and 
 
 
 ----------------------------------------------------------------------------------------------------------
@@ -1004,26 +1001,29 @@ where winner is null
 
 
 --- based on updated odds
+-- qEv4 : 
+	-- 2025.11.06 - 0.4 (12)
+-- qEv3 : 
+	-- 2025.11.06 - 0.5 (6)
+-- qEv2 : 
+	-- 2025.11.05 - 0.5 (24)
 -- qEv1 : 
 	-- 2025.11.04 - 0.6 (69)
 
 
 update table_tennis_matches 
-set bet_on = 1, notes = COALESCE(notes, '') || 'qEv2'
+set bet_on = 1, notes = COALESCE(notes, '') || 'qEv4'
 where winner is null
 	and bet_on is null
 	and prediction_great_p1_win > 0.5
-	and great > 0.5
-	and lest > 0.5;
-
+	and ((prediction_p1_win_on + h2h_streak_win_rate_on + prediction_2_p1_win_on + prediction_l10_p1_win_on + prediction_2_rev_p1_win_on) / 5 ) > 0.5;
 
 update table_tennis_matches 
-set bet_on = 2, notes = COALESCE(notes, '') || 'qEv2'
+set bet_on = 2, notes = COALESCE(notes, '') || 'qEv4'
 where winner is null
 	and bet_on is null
 	and prediction_great_p1_win < 0.5
-	and great < 0.5
-	and lest < 0.5;
+	and ((prediction_p1_win_on + h2h_streak_win_rate_on + prediction_2_p1_win_on + prediction_l10_p1_win_on + prediction_2_rev_p1_win_on) / 5 ) < 0.5;
 
 
 

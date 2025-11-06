@@ -39,11 +39,11 @@ export const insertMatchRecords = async (matches: Array<any>, tableName: string)
             const timestamp = new Date(unixTime)
             const localTimestamp = timestamp.toLocaleDateString('en-ZA', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', hour12: false, minute: '2-digit', second: '2-digit' })
 
-            const sql = `INSERT INTO ${tableName} (id, match_time, p1_id, p2_id, p1_name, p2_name, odd_p1, odd_p2, h2h_p1, h2h_p2, bm_p1, bm_p2, l10_p1, l10_p2, l30_p1, l30_p2,
+            const sql = `INSERT INTO ${tableName} (id, match_time, p1_id, p2_id, p1_name, p2_name, odd_p1, odd_p2, odd_p1_2, odd_p2_2,h2h_p1, h2h_p2, bm_p1, bm_p2, l10_p1, l10_p2, l30_p1, l30_p2,
                     p1_won_won, p1_won_lost, p1_lost_won, p1_lost_lost,
                     p2_won_won, p2_won_lost, p2_lost_won, p2_lost_lost, p1_match_no, p2_match_no, p1_streak, p2_streak                    
                      ${tableTennisAttributes})
-                VALUES ('${match['id']}', '${localTimestamp}', '${match['p1Id']}', '${match['p2Id']}', '${match['p1Name']}', '${match['p2Name']}', ${match['p1Odd']}, ${match['p2Odd']}, 
+                VALUES ('${match['id']}', '${localTimestamp}', '${match['p1Id']}', '${match['p2Id']}', '${match['p1Name']}', '${match['p2Name']}', ${match['p1Odd']}, ${match['p2Odd']}, ${match['p1Odd2']}, ${match['p2Odd2']}, 
                     ${match['h2hP1']}, ${match['h2hP2']}, ${match['bmP1']}, ${match['bmP2']}, ${match['p1L10']}, ${match['p2L10']}, ${match['p1L30']}, ${match['p2L30']},
                     ${match['p1Consistency']['wonWon']}, ${match['p1Consistency']['wonLost']}, ${match['p1Consistency']['lostWon']}, ${match['p1Consistency']['lostLost']},
                     ${match['p2Consistency']['wonWon']}, ${match['p2Consistency']['wonLost']}, ${match['p2Consistency']['lostWon']}, ${match['p2Consistency']['lostLost']},

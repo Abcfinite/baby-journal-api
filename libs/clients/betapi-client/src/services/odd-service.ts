@@ -13,48 +13,48 @@ export default class OddService {
     )
 
     const data = JSON.parse(resultFirstPage.value.toString())
-    var startOdds = data['results']['Bet365']
-    if (startOdds === undefined) {
-      startOdds = data['results']['CloudBet']
+    var oddsRoot = data['results']['Bet365']
+    if (oddsRoot === undefined) {
+      oddsRoot = data['results']['CloudBet']
     }
-    if (startOdds === undefined) {
-      startOdds = data['results']['DraftKings']
+    if (oddsRoot === undefined) {
+      oddsRoot = data['results']['DraftKings']
     }
-    if (startOdds === undefined) {
-      startOdds = data['results']['Duelbits']
+    if (oddsRoot === undefined) {
+      oddsRoot = data['results']['Duelbits']
     }
-    if (startOdds === undefined) {
-      startOdds = data['results']['FonBet']
+    if (oddsRoot === undefined) {
+      oddsRoot = data['results']['FonBet']
     }
 
-
-    startOdds = startOdds['odds']['start']
+    const startOdds = oddsRoot['odds']['start']
+    const endOdds = oddsRoot['odds']['end']
 
     if (type === '13') {
-      return OddParser.parse(startOdds['13_1'])
+      return OddParser.parse(startOdds['13_1'], endOdds['13_1'])
     }
 
-    return OddParser.parse(startOdds['92_1'])
+    return OddParser.parse(startOdds['92_1'], endOdds['92_1'])
   }
 
-  getPrematchOddEventId = async (eventId: string): Promise<Odds> => {
+  // getPrematchOddEventId = async (eventId: string): Promise<Odds> => {
 
-    console.log('>>>eventId : ', eventId)
+  //   console.log('>>>eventId : ', eventId)
 
-    const httpApiClient = new HttpApiClient()
-    const resultFirstPage = await httpApiClient.getNative(
-      'api.b365api.com',
-      '/v3/bet365/prematch',
-      null,
-      { FI: eventId, token: '196561-oNn4lPf9A9Hwcu' }
-    )
+  //   const httpApiClient = new HttpApiClient()
+  //   const resultFirstPage = await httpApiClient.getNative(
+  //     'api.b365api.com',
+  //     '/v3/bet365/prematch',
+  //     null,
+  //     { FI: eventId, token: '196561-oNn4lPf9A9Hwcu' }
+  //   )
 
-    const data = JSON.parse(resultFirstPage.value.toString())
-    const matchlineOdds = data['results'][0]['main']['sp']['match_lines']['odds']
+  //   const data = JSON.parse(resultFirstPage.value.toString())
+  //   const matchlineOdds = data['results'][0]['main']['sp']['match_lines']['odds']
 
-    return {
-      prematchOddP1: matchlineOdds.find((odd: any) => odd['header'] === '1' && odd['name'] === 'To Win').odds,
-      prematchOddP2: matchlineOdds.find((odd: any) => odd['header'] === '2' && odd['name'] === 'To Win').odds,
-    }
-  }
+  //   return {
+  //     prematchOddP1: matchlineOdds.find((odd: any) => odd['header'] === '1' && odd['name'] === 'To Win').odds,
+  //     prematchOddP2: matchlineOdds.find((odd: any) => odd['header'] === '2' && odd['name'] === 'To Win').odds,
+  //   }
+  // }
 }

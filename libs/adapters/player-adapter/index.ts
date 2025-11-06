@@ -325,6 +325,8 @@ export default class PlayerAdapter {
       "p2Name": player2Name,
       "p1Odd": Number(prematchOdds['prematchOddP1']) || null,
       "p2Odd": Number(prematchOdds['prematchOddP2']) || null,
+      "p1Odd2": Number(prematchOdds['prematchOddP1_2']) || null,
+      "p2Odd2": Number(prematchOdds['prematchOddP2_2']) || null,
       "h2hP1": h2hP1Won,
       h2hP2,
       h2hLastWinner,
