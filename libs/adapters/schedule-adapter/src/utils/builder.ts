@@ -219,7 +219,7 @@ export const toTTCsv = (jsonString: string): string => {
       '',
       '',
       m['date'],
-      m['time'].split(',')[1],
+      m['time'],
 
       m['p1Name'],
       m['p2Name'],

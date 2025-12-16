@@ -1058,8 +1058,7 @@ export default class ScheduleAdapter {
 
     if (sqsMessageNumber === 0) {
       for await (const event of events) {
-        // const eventDateTime = new Date(parseInt(event.time) * 1000).toLocaleString('en-GB', { timeZone: 'Australia/Sydney' })
-                const eventDateTime = new Date(parseInt(event.time) * 1000).toLocaleString('en-GB', { timeZone: 'Australia/Sydney' })
+        const eventDateTime = new Date(parseInt(event.time) * 1000).toLocaleString('en-GB', { timeZone: 'Australia/Sydney' })
 
         if (event.player1.name.includes('/')) {
           continue
@@ -1149,7 +1148,7 @@ export default class ScheduleAdapter {
           }
 
           const content = await new S3ClientCustom().getFile('table-tennis-match-schedule', file)
-          fileContent.push(JSON.parse(content))
+          fileContent.push(content)
         })
       )
 
@@ -1160,6 +1159,7 @@ export default class ScheduleAdapter {
           parsed = JSON.parse(content)
           fileContent.push(parsed)
         } catch (ex) {
+          console.error(ex)
           console.error('>>>>>failed to parse content')
           return
         }
