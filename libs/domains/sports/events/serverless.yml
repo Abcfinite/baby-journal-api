@@ -212,3 +212,11 @@ functions:
       - http:
           path: /bet365TableTennisList
           method: get
+
+  getTableTennisEventPattern:
+    handler: index.getTableTennisEventPattern
+    timeout: 900
+    events:
+      - http:
+          path: /tableTennisEventPattern
+          method: get

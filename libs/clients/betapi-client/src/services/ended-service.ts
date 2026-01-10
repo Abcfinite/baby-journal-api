@@ -58,6 +58,21 @@ export default class EndedService {
     return new EventSummaryParser().parse(pId, data['results'])
   }
 
+  getEndedEventBasedOnEventIdRaw = async (eventId: string): Promise<any> => {
+    const httpApiClient = new HttpApiClient()
+    const result = await httpApiClient.getNative(
+      'api.b365api.com',
+      '/v1/event/history',
+      null,
+      { event_id: eventId, token: '196561-oNn4lPf9A9Hwcu' }
+    )
+
+    const data = JSON.parse(result.value.toString())
+
+
+    return new EventSummaryParser().parseWithoutId(data['results'])
+  }
+
 
   async getEveryPage(pageNo: number, playerId: string, sportId: string) {
     const httpApiClient = new HttpApiClient()

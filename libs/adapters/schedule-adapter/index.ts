@@ -31,6 +31,7 @@ import { toCsv, toTTCsv, toTTPredCsv } from "./src/utils/builder"
 import BetapiClient from "@abcfinite/betapi-client"
 import TennisliveClient from "@abcfinite/tennislive-client"
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
+import { log } from "console"
 
 
 export default class ScheduleAdapter {
@@ -220,6 +221,13 @@ export default class ScheduleAdapter {
     await setTTPredictions()
 
     return 'predictionsTT completed'
+  }
+
+  async getTableTennisEventPattern(eventId: string) {
+    console.log('>>>>getTableTennisEventPattern:', eventId)
+    const matchSummary = await new BetapiClient().getEventSummaryRaw(eventId)
+    
+    return matchSummary
   }
 
   async getMorePrediction(sport: string) {
@@ -1170,7 +1178,7 @@ export default class ScheduleAdapter {
 
       // insertMatchRecords(fileContent, 'table_tennis_matches')
 
-      return fileContent
+      return 'result.json file stored successfully'
     }
 
 
