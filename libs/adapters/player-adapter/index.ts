@@ -374,6 +374,8 @@ export default class PlayerAdapter {
       // l10Status,
       'p1MatchNo': player1MatchesSum.matchNo,
       'p2MatchNo': player2MatchesSum.matchNo,
+      'p1WinCount': player1MatchesSum.winCount,
+      'p2WinCount': player2MatchesSum.winCount,
       "setScore": 'waiting',
       "winner": 'waiting',
       bmPlayerNames
@@ -386,13 +388,18 @@ export default class PlayerAdapter {
     const p1LastGameSetScore = player1Matches[0].score
     const p2LastGameSetScore = player2Matches[0].score
     const p1LastGameOpponentId = player1Matches[0].player1.id === player1Id ? player1Matches[0].player2.id : player1Matches[0].player1.id
+    const p1LastGameOpponentId_1 = player1Matches[1].player1.id === player1Id ? player1Matches[1].player2.id : player1Matches[1].player1.id
     const p2LastGameOpponentId = player2Matches[0].player1.id === player2Id ? player2Matches[0].player2.id : player2Matches[0].player1.id
+    const p2LastGameOpponentId_1 = player2Matches[1].player1.id === player2Id ? player2Matches[1].player2.id : player2Matches[1].player1.id
     const p1LastGameOpponentName = player1Matches[0].player1.id === player1Id ? player1Matches[0].player2.name : player1Matches[0].player1.name
     const p2LastGameOpponentName = player2Matches[0].player1.id === player2Id ? player2Matches[0].player2.name : player2Matches[0].player1.name
     var p1P1Last = []
     var p1P2Last = []
+    var p1P2Last_1 = []
     var p2P1Last = []
+    var p2P1Last_1 = [] 
     var p2P2Last = []
+    
 
     player1Last8.forEach(p1l8 => {
       const playerWon = p1l8.player1.id === p1LastGameOpponentId ? p1l8.player1won : !p1l8.player1won
@@ -418,6 +425,18 @@ export default class PlayerAdapter {
       }
     })
 
+    player1Last8.forEach(p1l8 => {
+      const playerWon = p1l8.player1.id === p2LastGameOpponentId_1 ? p1l8.player1won : !p1l8.player1won
+
+      if (p1l8.player1.id === p2LastGameOpponentId_1 || p1l8.player2.id === p2LastGameOpponentId_1) { 
+        if (!playerWon) {
+          p1P2Last_1.push('W')
+        } else {
+          p1P2Last_1.push('L')
+        }
+      }
+    })
+
     player2Last8.forEach(p2l8 => {
       const playerWon = p2l8.player1.id === p1LastGameOpponentId ? p2l8.player1won : !p2l8.player1won
 
@@ -426,6 +445,18 @@ export default class PlayerAdapter {
           p2P1Last.push('W')
         } else {
           p2P1Last.push('L')
+        }
+      }
+    })
+
+    player2Last8.forEach(p2l8 => {
+      const playerWon = p2l8.player1.id === p1LastGameOpponentId_1 ? p2l8.player1won : !p2l8.player1won
+
+      if (p2l8.player1.id === p1LastGameOpponentId_1 || p2l8.player2.id === p1LastGameOpponentId_1) { 
+        if (!playerWon) {
+          p2P1Last_1.push('W')
+        } else {
+          p2P1Last_1.push('L')
         }
       }
     })
@@ -447,6 +478,8 @@ export default class PlayerAdapter {
     p1P2Last.reverse()
     p2P1Last.reverse()
     p2P2Last.reverse()
+    p2P1Last_1.reverse()
+    p1P2Last_1.reverse()
 
     const tableTennisResult = {
       ...result,
@@ -460,6 +493,8 @@ export default class PlayerAdapter {
       p1P2Last,
       p2P1Last,
       p2P2Last,
+      p2P1Last_1,
+      p1P2Last_1
     }
 
     return tableTennisResult

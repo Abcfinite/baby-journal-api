@@ -41,7 +41,9 @@ export default class EndedService {
 
     await new CacheService().setPlayerCache(playerId, JSON.stringify(fullEndedEvents))
 
-    return { matchNo: paging.total, events: fullEndedEvents }
+    var winEvents = fullEndedEvents.filter(e => (e.player1.id === playerId && e.player1won)|| (e.player2.id === playerId && !e.player1won))
+
+    return { matchNo: paging.total, winCount : winEvents.length, events: fullEndedEvents }
   }
 
   getEndedEventBasedOnEventId = async (eventId: string, pId: string): Promise<EventSummary> => {
@@ -70,11 +72,14 @@ export default class EndedService {
     const data = JSON.parse(result.value.toString())
 
 
-    return new EventSummaryParser().parseWithoutId(data['results'])
+    return new EventSummaryParser().parseWithoutPid(eventId, data['results'])
   }
 
 
   async getEveryPage(pageNo: number, playerId: string, sportId: string) {
+
+    console.log('>>>ended-service getEveryPage', pageNo, playerId, sportId)
+
     const httpApiClient = new HttpApiClient()
     const loopResult = await httpApiClient.getNative(
       'api.b365api.com',

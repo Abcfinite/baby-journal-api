@@ -1,4 +1,5 @@
 export interface EventPattern {
+    id: string,
     p1Id: string,
     p2Id: string,
     winner: number | null,

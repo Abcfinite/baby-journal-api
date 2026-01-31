@@ -5,7 +5,7 @@ import { Match } from '../types/betApiEvent'
 import { parseMatch } from './matchParser'
 
 export default class EventSummaryParser {
-    parseWithoutId(event?: object): EventPattern {
+    parseWithoutPid(eventId: string, event?: object): EventPattern | null {
 
         const h2hMatches: Match[] = _.get(event, 'h2h', []).map(parseMatch)
 
@@ -15,12 +15,12 @@ export default class EventSummaryParser {
         const awayMatches: Match[] = _.get(event, 'away', []).map(parseMatch)
         var p2Id = this.findPersistentPlayerIds(awayMatches)
 
-
-        
-        console.log('>>>>p1Id : ', p1Id)
-        console.log('>>>>p2Id : ', p2Id)
+        if (h2hMatches.length < 8 || homeMatches.length < 8 || awayMatches.length < 8) {
+            return null
+        }
 
         return {
+            id: eventId,
             p1Id: p1Id[0], p2Id: p2Id[0],
             winner: null, score: null,
             result1: this.wOrLH2H(h2hMatches[0], p1Id[0]), score1: h2hMatches[0].ss, result2: this.wOrLH2H(h2hMatches[1], p1Id[0]), score2: h2hMatches[1].ss, result3: this.wOrLH2H(h2hMatches[2], p1Id[0]), score3: h2hMatches[2].ss,
@@ -75,19 +75,19 @@ export default class EventSummaryParser {
 
 
     findPersistentPlayerIds(matches: Match[]): string[] {
-    if (matches.length === 0) return [];
+        if (matches.length === 0) return [];
 
-    // Start with the two players from the very first match
-    let commonIds = new Set<string>([matches[0].home.id, matches[0].away.id]);
+        // Start with the two players from the very first match
+        let commonIds = new Set<string>([matches[0].home.id, matches[0].away.id]);
 
-    for (let i = 1; i < matches.length; i++) {
-        const currentMatchIds = new Set<string>([matches[i].home.id, matches[i].away.id]);
-        
-        // Filter commonIds to only keep those present in the current match
-        commonIds = new Set([...commonIds].filter(id => currentMatchIds.has(id)));
+        for (let i = 1; i < matches.length; i++) {
+            const currentMatchIds = new Set<string>([matches[i].home.id, matches[i].away.id]);
+            
+            // Filter commonIds to only keep those present in the current match
+            commonIds = new Set([...commonIds].filter(id => currentMatchIds.has(id)));
 
-        // Optimization: if no common IDs remain, stop looking
-        if (commonIds.size === 0) break;
+            // Optimization: if no common IDs remain, stop looking
+            if (commonIds.size === 0) break;
     }
 
     return Array.from(commonIds);

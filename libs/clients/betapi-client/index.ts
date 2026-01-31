@@ -9,6 +9,7 @@ import EndedService from './src/services/ended-service';
 import { EventTotal } from './src/types/eventTotal';
 import OddService from './src/services/odd-service';
 import { EventSummary } from './src/types/eventSummary';
+import { EventPattern } from './src/types/eventPattern';
 
 export default class BetapiClient {
 
@@ -19,7 +20,7 @@ export default class BetapiClient {
     return await new EndedService().getEndedEventBasedOnEventId(eventId, pId)
   }
 
-  async getEventSummaryRaw(eventId: string): Promise<any> {
+  async getEventSummaryRaw(eventId: string): Promise<EventPattern> {
     return await new EndedService().getEndedEventBasedOnEventIdRaw(eventId)
   }
 
@@ -63,10 +64,13 @@ export default class BetapiClient {
 
     fullIncomingEvents = fullIncomingEvents.concat(pageOneEvents)
 
-
+    
+    const pagePromises = []
     for (let page = 0; page < numberOfPageTurn; page++) {
-      fullIncomingEvents = fullIncomingEvents.concat(await this.getEveryPage(page, sportId))
+      pagePromises.push(this.getEveryPage(page, sportId))
     }
+    const allPages = await Promise.all(pagePromises)
+    fullIncomingEvents = fullIncomingEvents.concat(...allPages)
 
 
     await new CacheService().setEventCache(sportId, JSON.stringify(fullIncomingEvents))
@@ -129,6 +133,9 @@ export default class BetapiClient {
     )
 
     const data = JSON.parse(loopResult.value.toString())
+
+    console.log('>>>pageNo', pageNo, 'number of results:', data['results'].length)
+
     const parsedEvents = data['results'].map(r => {
       return new EventParser().parse(r)
     })

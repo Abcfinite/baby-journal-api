@@ -1,5 +1,41 @@
+import { EventPattern } from "@abcfinite/betapi-client/src/types/eventPattern"
 import _ from "lodash"
 import { Client, Pool } from 'pg'
+
+
+export const insertPatternRecords = async (matches: Array<EventPattern>) => {
+    const connection = new Client({
+        connectionString: 'postgres://postgres:AWqasde321!@database-1.cs5ztqximrwk.ap-southeast-2.rds.amazonaws.com/tennis',
+        ssl: {
+            rejectUnauthorized: false
+        }
+    })
+
+    await connection.connect()
+
+    for (const match of matches) {
+        const sql = `INSERT INTO public.table_tennis_pattern(
+            id, winner, score, result1, score1, result2, score2, result3, score3, result4, score4, result5, score5, result6, score6, result7, score7, result8, score8
+                , result9, score9, result10, score10, result11, score11, result12, score12, result13, score13, result14, score14, result15, score15
+                , result16, score16, result17, score17, result18, score18, result19, score19, result20, score20, result21, score21, result22, score22, result23, score23, result24, score24
+                , p1_id, p2_id, v1_p1_id, v2_p1_id, v3_p1_id, v4_p1_id, v5_p1_id, v6_p1_id, v7_p1_id, v8_p1_id, v1_p2_id, v2_p2_id, v3_p2_id, v4_p2_id, v5_p2_id, v6_p2_id, v7_p2_id, v8_p2_id)
+        	VALUES (${match.id}, ${match.winner}, '${match.score}', '${match.result1}', '${match.score1}', '${match.result2}', '${match.score2}', '${match.result3}', '${match.score3}', '${match.result4}', '${match.score4}', '${match.result5}', '${match.score5}', '${match.result6}', '${match.score6}', '${match.result7}', '${match.score7}', '${match.result8}', '${match.score8}'
+                , '${match.result9}', '${match.score9}', '${match.result10}', '${match.score10}', '${match.result11}', '${match.score11}', '${match.result12}', '${match.score12}', '${match.result13}', '${match.score13}', '${match.result14}', '${match.score14}', '${match.result15}', '${match.score15}'
+                , '${match.result16}', '${match.score16}', '${match.result17}', '${match.score17}', '${match.result18}', '${match.score18}', '${match.result19}', '${match.score19}', '${match.result20}', '${match.score20}', '${match.result21}', '${match.score21}', '${match.result22}', '${match.score22}', '${match.result23}', '${match.score23}', '${match.result24}', '${match.score24}'
+                , '${match.p1Id}', '${match.p2Id}', '${match.v1_p1_id}', '${match.v2_p1_id}', '${match.v3_p1_id}', '${match.v4_p1_id}', '${match.v5_p1_id}', '${match.v6_p1_id}', '${match.v7_p1_id}', '${match.v8_p1_id}', '${match.v1_p2_id}', '${match.v2_p2_id}', '${match.v3_p2_id}', '${match.v4_p2_id}', '${match.v5_p2_id}', '${match.v6_p2_id}', '${match.v7_p2_id}', '${match.v8_p2_id}');`
+
+            console.log('>>>sql :', sql)
+
+        try{
+            await connection.query(sql)
+        } catch (error) {
+            console.error('error cannot insert', error);
+            continue
+        }
+    }
+
+    await connection.end()
+}
 
 export const insertMatchRecords = async (matches: Array<any>, tableName: string) => {
     const connection = new Client({
@@ -25,11 +61,11 @@ export const insertMatchRecords = async (matches: Array<any>, tableName: string)
             //     oddData = oddsData.find((m) => m.player1.name = match['p1Name'] && m.player2.name === match['p2Name'])
             // }
 
-            tableTennisAttributes = ', p1_last_game_won, p2_last_game_won, p1_last_game_set_score, p2_last_game_set_score, p1_last_game_opponent_name, p2_last_game_opponent_name, p1_p1last, p1_p2last, p2_p1last, p2_p2last, bm_player_names'
+            tableTennisAttributes = ', p1_last_game_won, p2_last_game_won, p1_last_game_set_score, p2_last_game_set_score, p1_last_game_opponent_name, p2_last_game_opponent_name, p1_p1last, p1_p2last, p1_p2last_1, p2_p1last, p2_p1last_1, p2_p2last, bm_player_names'
             tableTennisValues = `, ${match['p1LastGameWon']}, ${match['p2LastGameWon']}, 
                 '${match['p1LastGameSetScore']}', '${match['p2LastGameSetScore']}', 
                 '${match['p1LastGameOpponentName']}', '${match['p2LastGameOpponentName']}',
-                '${match['p1P1Last'].join('')}', '${match['p1P2Last'].join('')}', '${match['p2P1Last'].join('')}', '${match['p2P2Last'].join('')}', '${match['bmPlayerNames'].join(', ')}'`
+                '${match['p1P1Last'].join('')}', '${match['p1P2Last'].join('')}', '${match['p1P2Last_1'].join('')}', '${match['p2P1Last'].join('')}', '${match['p2P1Last_1'].join('')}', '${match['p2P2Last'].join('')}', '${match['bmPlayerNames'].join(', ')}'`
         }
 
         try {
@@ -41,13 +77,13 @@ export const insertMatchRecords = async (matches: Array<any>, tableName: string)
 
             const sql = `INSERT INTO ${tableName} (id, match_time, p1_id, p2_id, p1_name, p2_name, odd_p1, odd_p2, odd_p1_2, odd_p2_2,h2h_p1, h2h_p2, bm_p1, bm_p2, h2h_last_won_player,l10_p1, l10_p2, l30_p1, l30_p2,
                     p1_won_won, p1_won_lost, p1_lost_won, p1_lost_lost,
-                    p2_won_won, p2_won_lost, p2_lost_won, p2_lost_lost, p1_match_no, p2_match_no, p1_streak, p2_streak                    
+                    p2_won_won, p2_won_lost, p2_lost_won, p2_lost_lost, p1_match_no, p2_match_no, p1_win_count, p2_win_count, p1_streak, p2_streak                    
                      ${tableTennisAttributes})
                 VALUES ('${match['id']}', '${localTimestamp}', '${match['p1Id']}', '${match['p2Id']}', '${match['p1Name']}', '${match['p2Name']}', ${match['p1Odd']}, ${match['p2Odd']}, ${match['p1Odd2']}, ${match['p2Odd2']}, 
                     ${match['h2hP1']}, ${match['h2hP2']}, ${match['bmP1']}, ${match['bmP2']}, ${match['h2hLastWinner']}, ${match['p1L10']}, ${match['p2L10']}, ${match['p1L30']}, ${match['p2L30']},
                     ${match['p1Consistency']['wonWon']}, ${match['p1Consistency']['wonLost']}, ${match['p1Consistency']['lostWon']}, ${match['p1Consistency']['lostLost']},
                     ${match['p2Consistency']['wonWon']}, ${match['p2Consistency']['wonLost']}, ${match['p2Consistency']['lostWon']}, ${match['p2Consistency']['lostLost']},
-                    ${match['p1MatchNo']}, ${match['p2MatchNo']}, '${match['p1Streak']}', '${match['p2Streak']}'
+                    ${match['p1MatchNo']}, ${match['p2MatchNo']}, ${match['p1WinCount']}, ${match['p2WinCount']}, '${match['p1Streak']}', '${match['p2Streak']}'
                     ${tableTennisValues})`
 
             console.log('>>>sql :', sql)
@@ -174,6 +210,10 @@ export const updateMatchRecordWinner = async (matchStatus: any, id: String, tabl
     await connection.connect()
     const sql = `UPDATE ${tableName} SET winner = ${winner}, set_score = '${setScore}' WHERE id = '${id}'`
     await connection.query(sql)
+
+    const sqlPattern = `UPDATE table_tennis_pattern SET winner = ${winner}, score = '${setScore}' WHERE id = '${id}'`
+    await connection.query(sqlPattern)
+
     await connection.end()
 }
 

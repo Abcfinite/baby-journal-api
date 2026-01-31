@@ -22,7 +22,7 @@ export default class HttpApiClient {
       'hostname': baseUrl,
       'path': encodeURI(path + queryParams),
       'headers': headers,
-      'timeout': 20000,
+      'timeout': 0,
       'family': 4, // Force IPv4 (or 6 for IPv6)
     }
 

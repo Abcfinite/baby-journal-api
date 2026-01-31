@@ -8,6 +8,7 @@ import { toQuery, formatResult, prediction, probability } from './src/utils/help
 import {
   getPendingMatchRecords,
   insertMatchRecords,
+  insertPatternRecords,
   updateMatchRecordWinner,
   getH2hScoreSimilarMatch,
   updateMatchRecPred,
@@ -31,7 +32,6 @@ import { toCsv, toTTCsv, toTTPredCsv } from "./src/utils/builder"
 import BetapiClient from "@abcfinite/betapi-client"
 import TennisliveClient from "@abcfinite/tennislive-client"
 import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
-import { log } from "console"
 
 
 export default class ScheduleAdapter {
@@ -226,6 +226,7 @@ export default class ScheduleAdapter {
   async getTableTennisEventPattern(eventId: string) {
     console.log('>>>>getTableTennisEventPattern:', eventId)
     const matchSummary = await new BetapiClient().getEventSummaryRaw(eventId)
+    await insertPatternRecords([matchSummary])
     
     return matchSummary
   }
@@ -1039,7 +1040,17 @@ export default class ScheduleAdapter {
       // console.log('>>>>oddsData>>>>')
       // console.log(JSON.parse(scheduleFile))
 
-      await insertMatchRecords(JSON.parse(resultFile), 'table_tennis_matches')
+      const matchesResult = JSON.parse(resultFile)
+
+      await Promise.all(matchesResult.map(async m => {
+        const matchSummary = await new BetapiClient().getEventSummaryRaw(m.id)
+
+        if (matchSummary !== null && matchSummary !== undefined) {
+          await insertPatternRecords([matchSummary])
+        }
+      }))
+
+      await insertMatchRecords(matchesResult, 'table_tennis_matches')
       // await insertMatchRecords(JSON.parse(resultFile), 'table_tennis_matches', JSON.parse(scheduleFile))
       await s3ClientCustom.deleteAllFiles('table-tennis-match-schedule')
       return toTTCsv(resultFile)
