@@ -37,43 +37,55 @@ export default class BetapiClient {
   }
 
   async getEvents(sportId: string): Promise<Array<Event>> {
-    const eventCache = await new CacheService().getEventCache(sportId)
 
-    if (eventCache !== null && eventCache !== undefined) {
-      return JSON.parse(eventCache)
-    }
 
-    const httpApiClient = new HttpApiClient()
 
-    const result = await httpApiClient.getNative(
-      'api.b365api.com',
-      '/v3/events/upcoming',
-      null,
-      { sport_id: sportId, token: '196561-oNn4lPf9A9Hwcu' }
-    )
 
     let fullIncomingEvents: Array<Event> = []
 
-    const data = JSON.parse(result.value.toString())
-    const paging = PagingParser.parse(data['pager'])
-    const numberOfPageTurn = Math.floor(paging.total / paging.perPage)
 
-    const pageOneEvents = data['results'].map(r => {
-      return new EventParser().parse(r)
-    })
+    try {
 
-    fullIncomingEvents = fullIncomingEvents.concat(pageOneEvents)
+      const httpApiClient = new HttpApiClient()
 
-    
-    const pagePromises = []
-    for (let page = 0; page < numberOfPageTurn; page++) {
-      pagePromises.push(this.getEveryPage(page, sportId))
+      const result = await httpApiClient.getNative(
+        'api.b365api.com',
+        '/v3/events/upcoming',
+        null,
+        { sport_id: sportId, token: '196561-oNn4lPf9A9Hwcu' }
+      )
+
+
+      const data = JSON.parse(result.value.toString())
+      const paging = PagingParser.parse(data['pager'])
+      const numberOfPageTurn = Math.floor(paging.total / paging.perPage)
+
+      const pageOneEvents = data['results'].map(r => {
+        return new EventParser().parse(r)
+      })
+
+      fullIncomingEvents = fullIncomingEvents.concat(pageOneEvents)
+
+      const pagePromises = []
+      for (let page = 0; page < numberOfPageTurn; page++) {
+        pagePromises.push(this.getEveryPage(page, sportId))
+      }
+      const allPages = await Promise.all(pagePromises)
+      fullIncomingEvents = fullIncomingEvents.concat(...allPages)
+
+      await new CacheService().deleteEventCache(sportId)
+      await new CacheService().setEventCache(sportId, JSON.stringify(fullIncomingEvents))
+
     }
-    const allPages = await Promise.all(pagePromises)
-    fullIncomingEvents = fullIncomingEvents.concat(...allPages)
+    catch(err) {
+      console.log('>>>error in getEvents', err)
 
+      const eventCache = await new CacheService().getEventCache(sportId)
 
-    await new CacheService().setEventCache(sportId, JSON.stringify(fullIncomingEvents))
+      if (eventCache !== null && eventCache !== undefined) {
+        return JSON.parse(eventCache)
+      }
+    }
 
     return fullIncomingEvents
   }

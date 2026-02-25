@@ -42,7 +42,6 @@ export default class ScheduleAdapter {
 
   async removeAllCache() {
     const s3ClientCustom = new S3ClientCustom()
-    await s3ClientCustom.deleteAllFiles('betapi-cache')
     await s3ClientCustom.deleteAllFiles('tennis-match-schedule')
     await s3ClientCustom.deleteAllFiles('table-tennis-match-schedule')
     await s3ClientCustom.deleteAllFiles('esports-match-schedule')
