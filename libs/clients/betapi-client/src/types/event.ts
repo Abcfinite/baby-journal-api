@@ -1,14 +1,21 @@
+import { Odds } from "./odds"
 import { Player } from "./player"
 
 export interface Event {
   id: string,
+  secondaryId?: string,
   time: string,
   player1: Player,
   player2: Player,
+  odds?: Odds,
   stage: string,
   score?: string,
   player1won?: boolean,
-  retired?: number
+  retired?: number,
+  h2hP1: any,
+  h2hP2: any,
+  l10P1: any,
+  l10P2: any
 }
 
 // retired

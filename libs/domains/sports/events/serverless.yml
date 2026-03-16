@@ -5,6 +5,8 @@ frameworkVersion: '3'
 plugins:
   - serverless-webpack
   - serverless-offline
+  - serverless-offline-scheduler
+
 
 constructs:
   myqueue:
@@ -26,9 +28,37 @@ provider:
         - dynamodb:PutItem
         - dynamodb:UpdateItem
         - dynamodb:DeleteItem
+        - s3:ListBucket
+        - s3:DeleteObject
+        - s3:PutObject
+        - s3:GetObject
+        - sqs:GetQueueAttributes
+        - sqs:SendMessage
+        - sqs:PurgeQueue
+        - sqs:ReceiveMessage
+        - sqs:DeleteMessage
+        - ses:SendEmail
       Resource:
         - "arn:aws:dynamodb:ap-southeast-2:*:table/Bets"
         - "arn:aws:dynamodb:ap-southeast-2:*:table/weight"
+        - "arn:aws:s3:::betapi-cache" # Resource for s3:ListBucket
+        - "arn:aws:s3:::betapi-cache/*"
+        - "arn:aws:s3:::tennis-match-schedule" # Resource for s3:ListBucket
+        - "arn:aws:s3:::tennis-match-schedule/*"
+        - "arn:aws:s3:::table-tennis-match-schedule" # Resource for s3:ListBucket
+        - "arn:aws:s3:::table-tennis-match-schedule/*"
+        - "arn:aws:s3:::esports-match-schedule" # Resource for s3:ListBucket
+        - "arn:aws:s3:::esports-match-schedule/*"
+        - "arn:aws:s3:::bet365-table-tennis" # Resource for s3:ListBucket
+        - "arn:aws:s3:::bet365-table-tennis/*"
+        - "arn:aws:s3:::safe-matches" # Resource for s3:ListBucket
+        - "arn:aws:s3:::safe-matches/*"
+        - "arn:aws:sqs:ap-southeast-2:146261234111:table-tennis-match-schedule-queue"
+        - "arn:aws:ses:ap-southeast-2:146261234111:identity/michaelclairine@gmail.com"
+        - "arn:aws:ses:ap-southeast-2:146261234111:identity/togetherwin.com.au"
+ # SQS Queue ARN
+
+
   environment:
     TENNISLIVE_HOST: ${env:TENNISLIVE_HOST}
 
@@ -36,6 +66,8 @@ custom:
   webpack:
     webpackConfig: './webpack.config.js'
     packager: yarn
+  serverless-offline:
+    httpPort: 4000
 
 functions:
   removeAllCache:
@@ -80,6 +112,27 @@ functions:
       - http:
           path: /schedule
           method: get
+  scheduleTennis:
+    handler: index.getScheduleTennis
+    timeout: 900
+    events:
+      - http:
+          path: /scheduleTennis
+          method: get
+  scheduleTT:
+    handler: index.getScheduleTT
+    timeout: 900
+    events:
+      - http:
+          path: /scheduleTT
+          method: get
+  scheduleEsports:
+    handler: index.getScheduleEsports
+    timeout: 900
+    events:
+      - http:
+          path: /scheduleEsports
+          method: get
   getPredictions:
     handler: index.getPredictions
     timeout: 900
@@ -87,10 +140,83 @@ functions:
       - http:
           path: /predictions
           method: get
+  getMatchesPredictions:
+    handler: index.getMatchesPredictions
+    timeout: 900
+    events:
+      - http:
+          path: /matchesPredictions
+          method: get
   result:
     handler: index.getResults
     timeout: 900
     events:
       - http:
           path: /results
+          method: get
+  # table tennis functions
+  tableTennisCheck:
+    handler: index.getTableTennisCheck
+    timeout: 900
+    events:
+      - http:
+          path: /tableTennisCheck
+          method: get
+  tableTennisNext:
+    handler: index.getTableTennisNext
+    timeout: 900
+    events:
+      - http:
+          path: /tableTennisNext
+          method: get
+  tableTennisResults:
+    handler: index.getTableTennisResults
+    timeout: 900
+    events:
+      - http:
+          path: /tableTennisResults
+          method: get
+  getPredictionsTT:
+    handler: index.getPredictionsTT
+    timeout: 900
+    events:
+      - http:
+          path: /predictionsTT
+          method: get
+  getMorePrediction:
+    handler: index.getMorePrediction
+    timeout: 900
+    events:
+      - http:
+          path: /morePrediction
+          method: get
+  getPendingResults:
+    handler: index.getPendingResults
+    timeout: 900
+    events:
+      - http:
+          path: /pendingResults
+          method: get
+  getSafeMatches:
+    handler: index.getSafeMatches
+    timeout: 900
+    events:
+      - http:
+          path: /safeMatches
+          method: get
+
+  getBet365TableTennisList:
+    handler: index.getBet365TableTennisList
+    timeout: 900
+    events:
+      - http:
+          path: /bet365TableTennisList
+          method: get
+
+  getTableTennisEventPattern:
+    handler: index.getTableTennisEventPattern
+    timeout: 900
+    events:
+      - http:
+          path: /tableTennisEventPattern
           method: get

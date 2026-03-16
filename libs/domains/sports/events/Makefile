@@ -1,2 +1,2 @@
 _offline: $(DOTENV_TARGET)
-	sls offline start --host 0.0.0.0  --noPrependStageInUrl
+	AWS_PROFILE=miclairin sls offline start --host 0.0.0.0  --noPrependStageInUrl

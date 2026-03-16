@@ -2,11 +2,15 @@ import { Player } from "./player"
 
 export interface SportEvent {
   id: string,
+  bet365EventId?: string,
   date: string,
   time: string,
   stage: string,
   url: string,
+  type: string,
   competitionName: string,
+  player1Odd?: number,
+  player2Odd?: number,
   player1: Player,
   player2: Player,
 }
@@ -18,6 +22,7 @@ export const playerNamesToSportEvent = (player1Id: string, player1Url: string,
     date: '',
     time: '',
     stage: '',
+    type: '',
     url: '',
     competitionName: '',
     player1: {

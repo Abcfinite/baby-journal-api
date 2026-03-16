@@ -186,3 +186,173 @@ export const toCsv = (jsonString: string): string => {
 
   return resultArray.join('\r\n')
 }
+
+export const toTTCsv = (jsonString: string): string => {
+  const csvHeader = [
+    'odd',
+    'bet on',
+    'result',
+    'date',
+    'time',
+
+    'p1 name',
+    'p2 name',
+    'p1 h2h',
+    'p2 h2h',
+    'p1 L10',
+    'p2 L10',
+    'p1 L30',
+    'p2 L30',
+
+    'h2h last winner',
+    'p1 BM',
+    'p2 BM',
+  ].join(',')
+
+  const resultArray = [csvHeader]
+
+  const jsonArray = JSON.parse(jsonString)
+
+  jsonArray.forEach(m => {
+    resultArray.push([
+      '',
+      '',
+      '',
+      m['date'],
+      m['time'],
+
+      m['p1Name'],
+      m['p2Name'],
+      m['h2hP1'],
+      m['h2hP2'],
+      m['p1L10'],
+      m['p2L10'],
+      m['p1L30'],
+      m['p2L30'],
+
+      m['h2hLastWinner'],
+      m['bmP1'],
+      m['bmP2'],
+    ].join(','))
+  })
+
+  return resultArray.join('\r\n')
+}
+
+export const toTTPredCsv = (items: any): string => {
+  const csvHeader = [
+    'odd',
+    'bet on',
+    'winner',
+    'notes',
+
+    'time',
+    'p1 name',
+    'p2 name',
+
+    'p1 last game won',
+    'p2 last game won',
+    'p1 last game set score',
+    'p2 last game set score',
+    'p1 last game opponent name',
+    'p2 last game opponent name',
+
+    'p1 match no',
+    'p2 match no',
+
+    'h2h gap',
+    'BM gap',
+    'L10 gap',
+
+    'won won gap',
+    'won lost gap',
+    'lost won gap',
+    'lost lost gap',
+
+    'h2h P1',
+    'h2h P2',
+    'BM P1',
+    'BM P2',
+    'L10 P1',
+    'L10 P2',
+
+    'p1 won won',
+    'p1 won lost',
+    'p1 lost won',
+    'p1 lost lost',
+
+    'p2 won won',
+    'p2 won lost',
+    'p2 lost won',
+    'p2 lost lost',
+
+    'P1 win prediction',
+    'prediction match no',
+    'P1 win prediction 2',
+    'prediction 2 match no',
+    'P1 win prediction 2 Rev',
+    'prediction 2 Rev match no',
+
+  ].join(',')
+
+  const resultArray = [csvHeader]
+
+  items.forEach(m => {
+    resultArray.push([
+      '',
+      '',
+      '',
+      '',
+
+      m['time'].split(',')[1],
+      m['p1Name'],
+      m['p2Name'],
+
+      m['p1LastGameWon'],
+      m['p2LastGameWon'],
+      m['p1LastGameSetScore'],
+      m['p2LastGameSetScore'],
+      m['p1LastGameOpponentName'],
+      m['p2LastGameOpponentName'],
+
+      m['p1MatchNo'],
+      m['p2MatchNo'],
+
+      Number(m['h2hP1']) - Number(m['h2hP2']),
+      Number(m['bmP1']) - Number(m['bmP2']),
+      Number(m['l10P1']) - Number(m['l10P2']),
+
+      Number(m['p1WonWon']) - Number(m['p2WonWon']),
+      Number(m['p2WonLost']) - Number(m['p1WonLost']),
+      Number(m['p1LostWon']) - Number(m['p2LostWon']),
+      Number(m['p2LostLost']) - Number(m['p1LostLost']),
+
+      m['h2hP1'],
+      m['h2hP2'],
+      m['bmP1'],
+      m['bmP2'],
+      m['l10P1'],
+      m['l10P2'],
+
+      m['p1WonWon'],
+      m['p1WonLost'],
+      m['p1LostWon'],
+      m['p1LostLost'],
+
+      m['p2WonWon'],
+      m['p2WonLost'],
+      m['p2LostWon'],
+      m['p2LostLost'],
+
+      m['predictionP1Win'],
+      m['predictionMatchNo'],
+      m['prediction2P1Win'],
+      m['prediction2MatchNo'],
+      m['prediction2RevP1Win'],
+      m['prediction2RevMatchNo'],
+
+    ].join(','))
+  })
+
+  return resultArray.join('\r\n')
+}

@@ -5,7 +5,7 @@
   "main": "./index.ts",
   "dependencies": {
     "@abcfinite/s3-client-custom": "0.0.1",
-    "@abcfinite/http-api-client": "^0.0.3",
+    "@abcfinite/http-api-client": "^0.0.4",
     "lodash.get": "^4.4.2",
     "node-html-parser": "^6.1.12"
   },

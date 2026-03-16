@@ -1,8 +1,7 @@
 import _ from "lodash"
 import S3ClientCustom from '@abcfinite/s3-client-custom'
 import { dobToAge } from "./src/utils/conversion"
-import PlayerAdapter from '../player-adapter/index';
-import Analysis from "./src/utils/analysis";
+// import Analysis from "./src/utils/analysis";
 import { Match } from "@abcfinite/tennislive-client/src/types/match";
 import { Player } from '@abcfinite/tennislive-client/src/types/player';
 
@@ -97,7 +96,7 @@ export default class MatchAdapter {
   }
 
   wlScore(player: Player) {
-    const playerAvgRanking = Analysis.avgRanking(player.currentRanking, player.highestRanking)
+    // const playerAvgRanking = Analysis.avgRanking(player.currentRanking, player.highestRanking)
     const result = {}
 
     var pScore = 0

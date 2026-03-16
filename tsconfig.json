@@ -5,7 +5,7 @@
       "ES2023",
       "DOM"
     ],
-    "module": "ES2020",
+    "module": "CommonJS",
     "target": "ES2021",
     "allowJs": true,
     "esModuleInterop": true,
@@ -35,9 +35,12 @@
       "@abcfinite/ladbrokes-client": [
         "./libs/client/ladbrokes-client"
       ],
-      // "@abcfinite/http-api-client": [
-      //   "./libs/client/http-api-client"
-      // ],
+      "@abcfinite/http-api-client": [
+        "./libs/client/http-api-client"
+      ],
+      "@abcfinite/betapi-client": [
+        "./libs/client/betapi-client"
+      ],
       "@abcfinite/tennislive-client": [
         "./libs/client/tennislive-client"
       ],

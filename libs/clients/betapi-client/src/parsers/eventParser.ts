@@ -19,6 +19,7 @@ export default class EventParser {
 
     return {
       id: _.get(event, 'id', ''),
+      secondaryId: _.get(event, 'our_event_id', ''),
       time: _.get(event, 'time', ''),
       player1: homePlayerData,
       player2: awayPlayerData,
@@ -26,6 +27,10 @@ export default class EventParser {
       score: _.get(event, 'ss'),
       player1won: isP1Won,
       retired: isP1Won == null && _.get(event, 'ss') === 'away' ? 1 : 2,
+      h2hP1: undefined,
+      h2hP2: undefined,
+      l10P1: undefined,
+      l10P2: undefined
     }
   }
 
@@ -34,23 +39,33 @@ export default class EventParser {
       return null
     }
 
-    const sets = score.split(',')
+    var scores = score.split('-')
 
-    if (sets === null || sets === undefined) {
-      return null
+    if (scores[0] > scores[1]) {
+      return true
+    } else {
+      return false
     }
 
-    let p1Set = 0
-    let p2Set = 0
-    sets.forEach(set => {
-      const pSet = set.split('-')
-      if (pSet[0] > pSet[1]) {
-        p1Set = p1Set + 1
-      } else {
-        p2Set = p2Set + 1
-      }
-    })
 
-    return p1Set > p2Set
+    // this is for tennis :
+    // const sets = score.split(',')
+
+    // if (sets === null || sets === undefined) {
+    //   return null
+    // }
+
+    // let p1Set = 0
+    // let p2Set = 0
+    // sets.forEach(set => {
+    //   const pSet = set.split('-')
+    //   if (pSet[0] > pSet[1]) {
+    //     p1Set = p1Set + 1
+    //   } else {
+    //     p2Set = p2Set + 1
+    //   }
+    // })
+
+    // return p1Set > p2Set
   }
 }

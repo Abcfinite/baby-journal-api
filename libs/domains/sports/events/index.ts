@@ -44,7 +44,7 @@ export const checkPlayer: Handler = async (event: any) => {
   })
 }
 
-export const getPredictions: Handler = async (event: any) => {
+export const getPredictions: Handler = async () => {
   var result = await new ScheduleAdapter().getPredictions()
 
   var response = {
@@ -60,7 +60,60 @@ export const getPredictions: Handler = async (event: any) => {
   })
 }
 
-export const getSchedule: Handler = async (event: any) => {
+export const getPredictionsTT: Handler = async () => {
+  // const { sport } = event.queryStringParameters
+  var result = await new ScheduleAdapter().getPredictionsTT()
+
+  var response = {
+    statusCode: 200,
+    body: JSON.stringify(result,
+      null,
+      2
+    ),
+  }
+
+  return new Promise((resolve) => {
+    resolve(response)
+  })
+}
+
+export const getMorePrediction: Handler = async (event: any) => {
+  const { sport } = event.queryStringParameters
+  var result = await new ScheduleAdapter().getMorePrediction(sport)
+
+  var response = {
+    statusCode: 200,
+    body: JSON.stringify(result,
+      null,
+      2
+    ),
+  }
+
+  return new Promise((resolve) => {
+    resolve(response)
+  })
+}
+
+export const getMatchesPredictions: Handler = async (event: any) => {
+  const { sport } = event.queryStringParameters
+  var result = await new ScheduleAdapter().getMatchesPredictions(sport)
+
+  var response = {
+    statusCode: 200,
+    body: JSON.stringify(result,
+      null,
+      2
+    ),
+  }
+
+  return new Promise((resolve) => {
+    resolve(response)
+  })
+}
+
+
+
+export const getSchedule: Handler = async () => {
   var result = await new ScheduleAdapter().getSchedule()
 
   var response = {
@@ -76,7 +129,23 @@ export const getSchedule: Handler = async (event: any) => {
   })
 }
 
-export const getResults: Handler = async (event: any) => {
+export const getScheduleTT: Handler = async () => {
+  var result = await new ScheduleAdapter().getScheduleTT()
+
+  var response = {
+    statusCode: 200,
+    body: JSON.stringify(result,
+      null,
+      2
+    ),
+  }
+
+  return new Promise((resolve) => {
+    resolve(response)
+  })
+}
+
+export const getResults: Handler = async () => {
   var result = await new ScheduleAdapter().getResults()
 
   var response = {
@@ -92,7 +161,7 @@ export const getResults: Handler = async (event: any) => {
   })
 }
 
-export const getPlayersName: Handler = async (event: any) => {
+export const getPlayersName: Handler = async () => {
   var result = await new ScheduleAdapter().getPlayersName()
 
   var response = {
@@ -108,7 +177,7 @@ export const getPlayersName: Handler = async (event: any) => {
   })
 }
 
-export const getPlayersUrl: Handler = async (event: any) => {
+export const getPlayersUrl: Handler = async () => {
   var result = await new ScheduleAdapter().getPlayersUrl()
 
   var response = {
@@ -124,8 +193,36 @@ export const getPlayersUrl: Handler = async (event: any) => {
   })
 }
 
-export const cacheBetAPI: Handler = async (event: any) => {
-  var result = await new ScheduleAdapter().cacheBetAPI()
+export const cacheBetAPI: Handler = async () => {
+  // let tennisBetAPIResult = await new ScheduleAdapter().cacheTennisBetAPI()
+  let tableTennisBetAPIResult = await new ScheduleAdapter().cacheTableTennisBetAPI()
+  // let cacheEsportsBetAPIResult = await new ScheduleAdapter().cacheEsportsBetAPI()
+
+  // const responseText = `table tennis events : ${tableTennisBetAPIResult}
+  //   tennis events : ${tennisBetAPIResult}
+  //   esports events : ${cacheEsportsBetAPIResult}`
+
+  const responseText = `table tennis events: ${tableTennisBetAPIResult}`
+
+  // const responseText = `table tennis events : ${tableTennisBetAPIResult}
+  //   tennis events : ${tennisBetAPIResult}`
+
+
+  const response = {
+    statusCode: 200,
+    body: JSON.stringify(responseText,
+      null,
+      2
+    ),
+  }
+
+  return new Promise((resolve) => {
+    resolve(response)
+  })
+}
+
+export const removeAllCache: Handler = async () => {
+  var result = await new ScheduleAdapter().removeAllCache()
 
   var response = {
     statusCode: 200,
@@ -140,8 +237,129 @@ export const cacheBetAPI: Handler = async (event: any) => {
   })
 }
 
-export const removeAllCache: Handler = async (event: any) => {
-  var result = await new ScheduleAdapter().removeAllCache()
+export const getTableTennisCheck: Handler = async () => {
+  var result = await new ScheduleAdapter().getTableTennisSchedule()
+
+  var response = {
+    statusCode: 200,
+    body: JSON.stringify(result,
+      null,
+      2
+    ),
+  }
+
+  return new Promise((resolve) => {
+    resolve(response)
+  })
+}
+
+export const getTableTennisNext: Handler = async () => {
+  var result = await new ScheduleAdapter().getTableTennisNext()
+
+  var response = {
+    statusCode: 200,
+    body: JSON.stringify(result,
+      null,
+      2
+    ),
+  }
+
+  return new Promise((resolve) => {
+    resolve(response)
+  })
+}
+
+export const getScheduleEsports: Handler = async () => {
+  var result = await new ScheduleAdapter().getScheduleEsports()
+
+  var response = {
+    statusCode: 200,
+    body: JSON.stringify(result,
+      null,
+      2
+    ),
+  }
+
+  return new Promise((resolve) => {
+    resolve(response)
+  })
+}
+
+export const getScheduleTennis: Handler = async () => {
+  var result = await new ScheduleAdapter().getScheduleTennis()
+
+  var response = {
+    statusCode: 200,
+    body: JSON.stringify(result,
+      null,
+      2
+    ),
+  }
+
+  return new Promise((resolve) => {
+    resolve(response)
+  })
+}
+
+export const getPendingResults: Handler = async (event: any) => {
+
+  const { sport } = event.queryStringParameters
+
+  var result = await new ScheduleAdapter().getPendingResults(sport)
+
+  var response = {
+    statusCode: 200,
+    body: JSON.stringify(result,
+      null,
+      2
+    ),
+  }
+
+  return new Promise((resolve) => {
+    resolve(response)
+  })
+}
+
+export const getSafeMatches: Handler = async () => {
+
+  var result = await new ScheduleAdapter().getSafeMatches()
+
+  var response = {
+    statusCode: 200,
+    body: JSON.stringify(result,
+      null,
+      2
+    ),
+  }
+
+  return new Promise((resolve) => {
+    resolve(response)
+  })
+}
+
+export const getBet365TableTennisList: Handler = async () => {
+
+  var result = await new ScheduleAdapter().getBet365TableTennisList()
+
+  var response = {
+    statusCode: 200,
+    body: JSON.stringify(result,
+      null,
+      2
+    ),
+  }
+
+  return new Promise((resolve) => {
+    resolve(response)
+  })
+}
+
+
+export const getTableTennisEventPattern: Handler = async (event: any) => {
+
+  const { eventId } = event.queryStringParameters
+
+  var result = await new ScheduleAdapter().getTableTennisEventPattern(eventId)
 
   var response = {
     statusCode: 200,

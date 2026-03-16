@@ -1,21 +1,97 @@
 import PagingParser from './src/parsers/pagingParser';
+import TableTennisParser from './src/parsers/tableTennisParser';
 import HttpApiClient from '../http-api-client'
 import { Event } from './src/types/event';
+import { Odds } from './src/types/odds';
 import EventParser from './src/parsers/eventParser';
 import CacheService from './src/services/cache-service';
 import EndedService from './src/services/ended-service';
+import { EventTotal } from './src/types/eventTotal';
+import OddService from './src/services/odd-service';
+import { EventSummary } from './src/types/eventSummary';
+import { EventPattern } from './src/types/eventPattern';
 
 export default class BetapiClient {
 
   constructor() {
   }
 
-  async getPlayerEndedMatches(playerId: string): Promise<Array<Event>> {
-    return await new EndedService().getEndedEventBasedOnPlayerId(playerId)
+  async getEventSummary(eventId: string, pId: string): Promise<EventSummary> {
+    return await new EndedService().getEndedEventBasedOnEventId(eventId, pId)
   }
 
-  async getEvents() : Promise<Array<Event>> {
-    const eventCache = await new CacheService().getEventCache()
+  async getEventSummaryRaw(eventId: string): Promise<EventPattern> {
+    return await new EndedService().getEndedEventBasedOnEventIdRaw(eventId)
+  }
+
+  // async getPrematchOddEventId(eventId: string): Promise<Odds> {
+  //   return await new OddService().getPrematchOddEventId(eventId)
+  // }
+
+  async getEventPrematchOdd(eventId: string, type: string): Promise<Odds> {
+    return await new OddService().getOddSummaryEventId(eventId, type)
+  }
+
+  async getPlayerEndedMatches(playerId: string, sportId: string, fullPages = false): Promise<EventTotal> {
+    return await new EndedService().getEndedEventBasedOnPlayerId(playerId, sportId, fullPages)
+  }
+
+  async getEvents(sportId: string): Promise<Array<Event>> {
+
+
+
+
+    let fullIncomingEvents: Array<Event> = []
+
+
+    try {
+
+      const httpApiClient = new HttpApiClient()
+
+      const result = await httpApiClient.getNative(
+        'api.b365api.com',
+        '/v3/events/upcoming',
+        null,
+        { sport_id: sportId, token: '196561-oNn4lPf9A9Hwcu' }
+      )
+
+
+      const data = JSON.parse(result.value.toString())
+      const paging = PagingParser.parse(data['pager'])
+      const numberOfPageTurn = Math.floor(paging.total / paging.perPage)
+
+      const pageOneEvents = data['results'].map(r => {
+        return new EventParser().parse(r)
+      })
+
+      fullIncomingEvents = fullIncomingEvents.concat(pageOneEvents)
+
+      const pagePromises = []
+      for (let page = 0; page < numberOfPageTurn; page++) {
+        pagePromises.push(this.getEveryPage(page, sportId))
+      }
+      const allPages = await Promise.all(pagePromises)
+      fullIncomingEvents = fullIncomingEvents.concat(...allPages)
+
+      await new CacheService().deleteEventCache(sportId)
+      await new CacheService().setEventCache(sportId, JSON.stringify(fullIncomingEvents))
+
+    }
+    catch(err) {
+      console.log('>>>error in getEvents', err)
+
+      const eventCache = await new CacheService().getEventCache(sportId)
+
+      if (eventCache !== null && eventCache !== undefined) {
+        return JSON.parse(eventCache)
+      }
+    }
+
+    return fullIncomingEvents
+  }
+
+  async getBet365Events(sportId: string): Promise<Array<Event>> {
+    const eventCache = await new CacheService().getBet365EventCache(sportId)
 
     if (eventCache !== null && eventCache !== undefined) {
       return JSON.parse(eventCache)
@@ -25,9 +101,9 @@ export default class BetapiClient {
 
     const result = await httpApiClient.getNative(
       'api.b365api.com',
-      '/v3/events/upcoming',
+      '/v1/bet365/upcoming',
       null,
-      { sport_id: '13', token: '196561-oNn4lPf9A9Hwcu' }
+      { sport_id: sportId, token: '196561-oNn4lPf9A9Hwcu' }
     )
 
     let fullIncomingEvents: Array<Event> = []
@@ -37,36 +113,48 @@ export default class BetapiClient {
     const numberOfPageTurn = Math.floor(paging.total / paging.perPage)
 
     const pageOneEvents = data['results'].map(r => {
+
+      // console.log('>>>bet365 event')
+      // console.log(r)
+
       return new EventParser().parse(r)
     })
 
     fullIncomingEvents = fullIncomingEvents.concat(pageOneEvents)
 
 
-    for (let page=0; page < numberOfPageTurn; page++) {
-      fullIncomingEvents = fullIncomingEvents.concat(await this.getEveryPage(page))
+    for (let page = 0; page < numberOfPageTurn; page++) {
+      fullIncomingEvents = fullIncomingEvents.concat(await this.getEveryPage(page, sportId))
     }
 
+    // console.log('>>>bet365 fullIncomingEvents')
+    // console.log(fullIncomingEvents)
 
-    await new CacheService().setEventCache(JSON.stringify(fullIncomingEvents))
+    await new CacheService().setBet365EventCache(sportId, JSON.stringify(fullIncomingEvents))
 
     return fullIncomingEvents
   }
 
-  async getEveryPage(pageNo: number) {
+  async getEveryPage(pageNo: number, sportId: string) {
     const httpApiClient = new HttpApiClient()
     const loopResult = await httpApiClient.getNative(
       'api.b365api.com',
       '/v3/events/upcoming',
       null,
-      { sport_id: '13', token: '196561-oNn4lPf9A9Hwcu', page: `${2+pageNo}` }
+      { sport_id: sportId, token: '196561-oNn4lPf9A9Hwcu', page: `${2 + pageNo}` }
     )
 
     const data = JSON.parse(loopResult.value.toString())
+
+    console.log('>>>pageNo', pageNo, 'number of results:', data['results'].length)
+
     const parsedEvents = data['results'].map(r => {
       return new EventParser().parse(r)
     })
 
     return parsedEvents
   }
+
+  parseTableTennisEvent = async (htmlResponse: string) => new TableTennisParser().parse(htmlResponse)
+
 }

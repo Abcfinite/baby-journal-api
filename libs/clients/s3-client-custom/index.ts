@@ -1,13 +1,49 @@
-import { ListObjectsV2Command,
+import {
+  ListObjectsV2Command,
   GetObjectCommand,
   DeleteObjectCommand,
   PutObjectCommand,
-  S3Client } from "@aws-sdk/client-s3";
+  S3Client
+} from "@aws-sdk/client-s3";
 export default class S3ClientCustom {
 
-  constructor() {}
+  constructor() { }
 
-  async getFileList(bucketName: string) : Promise<string[]>{
+  async getLatestModified(bucketName: string): Promise<string> {
+    const client = new S3Client({});
+
+    const command = new ListObjectsV2Command({
+      Bucket: bucketName,
+    });
+
+    try {
+      let isTruncated = true;
+      const fileList = []
+
+      while (isTruncated) {
+        const { Contents, IsTruncated, NextContinuationToken } = await client.send(command);
+
+        if (Contents === null || Contents === undefined) {
+          return ''
+        }
+
+        const sortedContents = Contents.sort((a, b) => {
+          if (!a.LastModified || !b.LastModified) return 0;
+          return b.LastModified.getTime() - a.LastModified.getTime();
+        });
+
+        sortedContents.map((c) => fileList.push(c.Key));
+        isTruncated = IsTruncated;
+        command.input.ContinuationToken = NextContinuationToken;
+      }
+
+      return fileList[0]
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  async getFileList(bucketName: string): Promise<string[]> {
     const client = new S3Client({});
 
     const command = new ListObjectsV2Command({
@@ -39,7 +75,7 @@ export default class S3ClientCustom {
     }
   }
 
-  async getFile(bucketName: string, fileName: string) : Promise<string> {
+  async getFile(bucketName: string, fileName: string): Promise<string> {
     const client = new S3Client({});
     const command = new GetObjectCommand({
       Bucket: bucketName,
@@ -57,7 +93,7 @@ export default class S3ClientCustom {
     }
   }
 
-  async deleteAllFiles(bucketName: string) : Promise<string> {
+  async deleteAllFiles(bucketName: string): Promise<string> {
     const fileList = await this.getFileList(bucketName)
 
     const client = new S3Client({});
@@ -82,7 +118,7 @@ export default class S3ClientCustom {
     return 'success'
   }
 
-  async putFile(bucketName: string, fileName: string, content: string) : Promise<string> {
+  async putFile(bucketName: string, fileName: string, content: string): Promise<string> {
     const client = new S3Client({});
 
     const command = new PutObjectCommand({

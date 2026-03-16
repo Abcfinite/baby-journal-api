@@ -1,13 +1,26 @@
 import _ from "lodash"
 import { parse } from 'csv-parse'
 import { Readable } from 'stream'
+import * as nodeHtmlParser from 'node-html-parser'
 
 import { Client } from 'pg'
 import { toQuery, formatResult, prediction, probability } from './src/utils/helper'
+import {
+  getPendingMatchRecords,
+  insertMatchRecords,
+  insertPatternRecords,
+  updateMatchRecordWinner,
+  getH2hScoreSimilarMatch,
+  updateMatchRecPred,
+  setTTPredictions,
+  getH2hStreakScoreSimilarMatch,
+  getH2hStreakSimilarMatch,
+  getTTSafeMatches,
+} from './src/utils/database'
 
 import S3ClientCustom from '@abcfinite/s3-client-custom'
 import { putItem, executeScan, executeQuery } from '@abcfinite/dynamodb-client'
-import { playerNamesToSportEvent, SportEvent } from "@abcfinite/tennislive-client/src/types/sportEvent"
+import { playerNamesToSportEvent } from "@abcfinite/tennislive-client/src/types/sportEvent"
 import PlayerAdapter from '@abcfinite/player-adapter'
 import {
   SQSClient, SendMessageCommand,
@@ -15,17 +28,24 @@ import {
   DeleteMessageCommand,
   PurgeQueueCommand
 } from "@aws-sdk/client-sqs";
-import { toCsv } from "./src/utils/builder"
+import { toCsv, toTTCsv, toTTPredCsv } from "./src/utils/builder"
 import BetapiClient from "@abcfinite/betapi-client"
 import TennisliveClient from "@abcfinite/tennislive-client"
+import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
+
 
 export default class ScheduleAdapter {
 
+  currentCheckDate = '14/06/2025' //esports only
+  matchNoEsports = 27
+  matchNoTennis = 93
 
   async removeAllCache() {
     const s3ClientCustom = new S3ClientCustom()
-    await s3ClientCustom.deleteAllFiles('betapi-cache')
     await s3ClientCustom.deleteAllFiles('tennis-match-schedule')
+    await s3ClientCustom.deleteAllFiles('table-tennis-match-schedule')
+    await s3ClientCustom.deleteAllFiles('esports-match-schedule')
+    await s3ClientCustom.deleteAllFiles('bet365-table-tennis')
 
     const queueUrl = 'https://sqs.ap-southeast-2.amazonaws.com/146261234111/tennis-match-schedule-queue'
     const client = new SQSClient({ region: 'ap-southeast-2' });
@@ -46,54 +66,79 @@ export default class ScheduleAdapter {
     return 'all cache removed and sqs queue purged'
   }
 
-  async cacheBetAPI() {
+  async cacheTennisBetAPI() {
     // get latest schedule
     // todo : why need to get result first ??? Is it to warm up the lambda ???
     const s3ClientCustom = new S3ClientCustom()
     await s3ClientCustom.getFile('tennis-match-schedule', 'result.json')
 
-    const events = await new BetapiClient().getEvents()
+    const events = await new BetapiClient().getEvents('13')
 
-    // safe all main players in dynamodb
-    if (events.length === 0) { return 'no match scheduled' }
+    // // safe all main players in dynamodb
+    // if (events.length === 0) { return 'no match scheduled' }
 
-    // filter out double
-    const filteredEvents = events.map(event => {
-      if (!event.player1.name.includes('/')) {
-        return event
-      }
-    }).filter(Boolean)
+    // // filter out double
+    // const filteredEvents = events.map(event => {
+    //   if (!event.player1.name.includes('/')) {
+    //     return event
+    //   }
+    // }).filter(Boolean)
 
-    // collect putItem function
-    const player1s =
-      filteredEvents.map(event => {
-        const player1 = {
-          "id": event.player1.id,
-          "full_name": event.player1.name,
-          "url_found": true,
-        }
+    // // collect putItem function
+    // const player1s =
+    //   filteredEvents.map(event => {
+    //     const player1 = {
+    //       "id": event.player1.id,
+    //       "full_name": event.player1.name,
+    //       "url_found": true,
+    //     }
 
-        return putItem('tennis_players', player1)
-      })
+    //     if (player1.full_name === undefined || player1.full_name === null) {
+    //       console.error('>>>>>player2.full_name is null')
+    //       console.error(player1)
+    //       return
+    //     }
+
+    //     return putItem('tennis_players', player1)
+    //   })
 
 
-    const player2s =
-      filteredEvents.map(event => {
-        const player2 = {
-          "id": event.player2.id,
-          "full_name": event.player2.name,
-          "url_found": true,
-        }
+    // const player2s =
+    //   filteredEvents.map(event => {
+    //     const player2 = {
+    //       "id": event.player2.id,
+    //       "full_name": event.player2.name,
+    //       "url_found": true,
+    //     }
 
-        return putItem('tennis_players', player2)
-      })
+    //     if (player2.full_name === undefined || player2.full_name === null) {
+    //       console.error('>>>>>player2.full_name is null')
+    //       console.error(player2)
+    //       return
+    //     }
 
-    // execute putItem on dynamodb
-    await Promise.all(player1s)
-    await Promise.all(player2s)
+    //     return putItem('tennis_players', player2)
+    //   })
 
-    // return number of matches
-    return `number of matches : ${events.length}`
+    // // execute putItem on dynamodb
+    // await Promise.all(player1s)
+    // await Promise.all(player2s)
+
+    // // return number of matches
+    return events.length
+  }
+
+  async cacheTableTennisBetAPI() {
+    // await new BetapiClient().getBet365Events('92')
+    const events = await new BetapiClient().getEvents('92')
+
+    return events.length
+  }
+
+  async cacheEsportsBetAPI() {
+    const events = await new BetapiClient().getEvents('151')
+
+    return events.length
   }
 
   async getPredictions() {
@@ -169,6 +214,262 @@ export default class ScheduleAdapter {
 
     // return csv file
     return data.map(p => [p.fp, p.result, p.prediction, p.probability]).join('\r\n')
+  }
+
+  async getPredictionsTT() {
+    await setTTPredictions()
+
+    return 'predictionsTT completed'
+  }
+
+  async getTableTennisEventPattern(eventId: string) {
+    console.log('>>>>getTableTennisEventPattern:', eventId)
+    const matchSummary = await new BetapiClient().getEventSummaryRaw(eventId)
+    await insertPatternRecords([matchSummary])
+    
+    return matchSummary
+  }
+
+  async getMorePrediction(sport: string) {
+    var tableName = 'table_tennis_matches'
+    if (sport === 'tennis') {
+      tableName = 'tennis_matches'
+    }
+
+    const pendingMatchesResult = await getPendingMatchRecords(tableName)
+
+    for (const match of pendingMatchesResult) {
+      // const similarMatches = await getH2hPrevSimilarMatch(match, tableName)
+
+      const h2hScoreData = await getH2hScoreSimilarMatch(match, tableName)
+      const h2hStreakScoreData = await getH2hStreakScoreSimilarMatch(match, tableName)
+      const h2hStreakSimilarMatches = await getH2hStreakSimilarMatch(match, tableName)
+
+
+      const predH2hScore = {
+        id: match.id,
+        p1Probability: h2hScoreData.length > 0 ? (h2hScoreData.filter(m => m.winner === '1').length / h2hScoreData.length).toFixed(2) : '0',
+        probabilityMatchNo: h2hScoreData.length,
+      }
+
+      const predH2hStreakScore = {
+        id: match.id,
+        p1Probability: h2hStreakScoreData.length > 0 ? (h2hStreakScoreData.filter(m => m.winner === '1').length / h2hStreakScoreData.length).toFixed(2) : '0',
+        probabilityMatchNo: h2hStreakScoreData.length,
+      }
+
+      const h2hStreakSimilarRate = {
+        id: match.id,
+        p1Probability: h2hStreakSimilarMatches.length > 0 ? (h2hStreakSimilarMatches.filter(m => m.winner === '1').length / h2hStreakSimilarMatches.length).toFixed(2) : '0',
+        probabilityMatchNo: h2hStreakSimilarMatches.length,
+      }
+
+      await updateMatchRecPred(predH2hScore, predH2hStreakScore, h2hStreakSimilarRate, tableName)
+
+    }
+
+    return 'please run getPredictionsTT'
+  }
+
+  getTTLessThanOneHalfPrediction(match: any) {
+    const z =
+      -1.0429 +
+      (-0.4010 * match.odd_p1) +
+      (0.2310 * match.odd_p2) +
+      (-0.0621 * match.h2h_p1) +
+      (0.3016 * match.h2h_p2) +
+      (0.0431 * match.l10_p1) +
+      (-0.1925 * match.l10_p2) +
+      (0.0872 * this.convertStreakToNumber(match.p1_streak)) +
+      (-0.1582 * this.convertStreakToNumber(match.p2_streak));
+
+    const probability = 1 / (1 + Math.exp(-z));
+    return probability;
+  }
+
+  // getUnderdogFiveFivePrediction(match: any) {
+
+  //   const p1WinStats = [match.p1_match1_p1_won, match.p1_match2_p1_won, match.p1_match3_p1_won, match.p1_match4_p1_won, match.p1_match5_p1_won]
+  //   const p2WinStats = [match.p2_match1_p1_won, match.p2_match2_p1_won, match.p2_match3_p1_won, match.p2_match4_p1_won, match.p2_match5_p1_won]
+
+  //   // Example usage
+  //   const matchData: MatchInput = {
+  //     odd_p1: 1.61,
+  //     odd_p2: 2.2,
+  //     h2h_p1: 4,
+  //     h2h_p2: 6,
+  //     l10_p1: 5,
+  //     l10_p2: 7,
+  //     p1_streak_encoded: this.convertStreakToNumber(match.p1_streak),
+  //     p2_streak_encoded: this.convertStreakToNumber(match.p2_streak),
+  //     p1_recent_win_rate: this.calculateRecentWinRate(p1WinStats),   // from last 5 matches
+  //     p2_recent_win_rate: this.calculateRecentWinRate(p2WinStats)
+  //   };
+
+    // const prob = predictUnderdogWin(matchData);
+
+  //   return prob
+  // }
+
+  getTTMoreThanOneHalfPrediction(match: any) {
+
+    const p1WinStats = [match.p1_match1_p1_won, match.p1_match2_p1_won, match.p1_match3_p1_won, match.p1_match4_p1_won, match.p1_match5_p1_won]
+    const p2WinStats = [match.p2_match1_p1_won, match.p2_match2_p1_won, match.p2_match3_p1_won, match.p2_match4_p1_won, match.p2_match5_p1_won]
+
+    const z =
+      -0.1855 +
+      0.4257 * match.odd_p1 +
+      -0.3236 * match.odd_p2 +
+      -0.1682 * match.h2h_p1 +
+      0.2034 * match.h2h_p2 +
+      0.0385 * match.l10_p1 +
+      -0.1406 * match.l10_p2 +
+      -0.0554 * this.convertStreakToNumber(match.p1_streak) +
+      0.0820 * this.convertStreakToNumber(match.p2_streak) +
+      0.4896 * this.calculateRecentWinRate(p1WinStats) +
+      0.7436 * this.calculateRecentWinRate(p2WinStats);
+
+    const probability = 1 / (1 + Math.exp(-z));
+    return probability;
+  }
+
+  convertStreakToNumber(streak) {
+    if (typeof streak !== 'string' || streak.length < 2) return 0;
+
+    const num = parseInt(streak.slice(0, -1), 10);
+    const type = streak.slice(-1).toUpperCase();
+
+    if (isNaN(num)) return 0;
+
+    return type === 'W' ? num : type === 'L' ? -num : 0;
+  }
+
+  calculateRecentWinRate(matches) {
+    if (!Array.isArray(matches) || matches.length === 0) return 0;
+
+    const wins = matches
+      .map(m => typeof m === 'boolean' ? m : String(m).toLowerCase() === 'true')
+      .filter(m => typeof m === 'boolean');
+
+    const sum = wins.reduce((acc, win) => acc + (win ? 1 : 0), 0);
+    return sum / wins.length;
+  }
+
+  score(scoreList: Array<String>) {
+    var score = 0
+    var index = 5
+
+    scoreList.splice(0, 5).forEach(s => {
+      const p1Won = s.replaceAll(' ', '').split(':')[1] === 'true'
+      const p1Val = Number(s.replaceAll(' ', '').split(':')[0].split('v')[0])
+      const p2Val = Number(s.replaceAll(' ', '').split(':')[0].split('v')[1])
+
+      // if (p1Val === p2Val && p1Won) {
+      //   score++
+      // } else if (p1Val < p2Val && p1Won) {
+      //   score = score + 2
+      // }
+      // result : 4/11 = 0.36
+
+      // p1Won ? score++ : score--
+      // result : 1/5 = 0.2
+
+
+      // if (p1Val === p2Val) {
+      //   p1Won ? score = score + 2 : score = score - 2
+      // } else if (p1Val < p2Val) {
+      //   p1Won ? score = score + 3 : score = score - 1
+      // } else if (p1Val > p2Val) {
+      //   p1Won ? score = score + 1 : score = score - 3
+      // }
+      // result : 3/9 => 0.33
+
+      if (p1Val < p2Val && p1Won) {
+        score = score + ((p2Val - p1Val) * index)
+      } else if (p1Val > p2Val && !p1Won) {
+        score = score - ((p2Val - p1Val) * index)
+      } else if (p1Val === p2Val && !p1Won) {
+        score = score - 5
+      } else if (p1Val === p2Val && p1Won) {
+        score = score + 5
+      }
+
+      index--
+    })
+
+    return score
+  }
+
+  getClosestMatch(predictionAlt2: any, l10Prediction: any, streakPrediction: any, similarPrediction: any) {
+    var neighbors = []
+
+    for (const pred of similarPrediction) {
+      var a = predictionAlt2.p1Probability - pred['prediction_2_p1_win']
+      var b = l10Prediction.p1Probability - pred['prediction_l10_p1_win']
+      var c = streakPrediction.p1Probability - pred['prediction_streak_p1_win']
+
+      // var euclidean = Math.sqrt(a * a + b * b + c * c)
+      // var manhattan = Math.abs(a) + Math.abs(b) + Math.abs(c)
+      var chebyshev = Math.max(Math.abs(a), Math.abs(b), Math.abs(c))
+
+      neighbors.push({
+        distance: parseFloat(chebyshev.toFixed(2)),
+        prediction: pred['winner'],
+        matchNo: similarPrediction.length
+      })
+    }
+
+    return neighbors.sort((a, b) => a.distance - b.distance)
+
+  }
+
+  async getMatchesPredictions(sport: string) {
+    var tableName = 'table_tennis_matches'
+    if (sport === 'tennis') {
+      tableName = 'tennis_matches'
+    }
+
+    const waitingQueryResultAfterPrediction = await getPendingMatchRecords(tableName)
+
+    //toCSV
+    const forCsv = waitingQueryResultAfterPrediction.map(item => {
+
+      return {
+        time: new Date(Date.parse(item.match_time)).toLocaleDateString('en-GB', { hour: '2-digit', hour12: false, minute: '2-digit', second: '2-digit' }),
+        p1Name: item.p1_name,
+        p2Name: item.p2_name,
+        p1LastGameWon: item.p1_last_game_won,
+        p2LastGameWon: item.p2_last_game_won,
+        p1LastGameSetScore: item.p1_last_game_set_score,
+        p2LastGameSetScore: item.p2_last_game_set_score,
+        p1LastGameOpponentName: item.p1_last_game_opponent_name,
+        p2LastGameOpponentName: item.p2_last_game_opponent_name,
+        h2hP1: item.h2h_p1,
+        h2hP2: item.h2h_p2,
+        bmP1: item.bm_p1,
+        bmP2: item.bm_p2,
+        l10P1: item.l10_p1,
+        l10P2: item.l10_p2,
+        p1WonWon: item.p1_won_won,
+        p1WonLost: item.p1_won_lost,
+        p1LostWon: item.p1_lost_won,
+        p1LostLost: item.p1_lost_lost,
+        p2WonWon: item.p2_won_won,
+        p2WonLost: item.p2_won_lost,
+        p2LostWon: item.p2_lost_won,
+        p2LostLost: item.p2_lost_lost,
+        p1MatchNo: item.p1_match_no,
+        p2MatchNo: item.p2_match_no,
+        predictionP1Win: item.prediction_p1_win,
+        predictionMatchNo: item.prediction_match_no,
+        prediction2P1Win: item.prediction_2_p1_win,
+        prediction2MatchNo: item.prediction_2_match_no,
+        prediction2RevP1Win: item.prediction_2_p1_win,
+        prediction2RevMatchNo: item.prediction_2_match_no,
+      }
+    })
+
+    return toTTPredCsv(forCsv)
   }
 
   async getPlayersName() {
@@ -338,8 +639,6 @@ export default class ScheduleAdapter {
 
   async getSchedule() {
     const s3ClientCustom = new S3ClientCustom()
-    const currentDateTime = new Date().toLocaleString('en-GB', { timeZone: 'Australia/Sydney' })
-    const currentDate = currentDateTime.split(',')[0].trim()
 
     var requestResult = 'error'
     const resultFile = await s3ClientCustom.getFile('tennis-match-schedule', 'result.json')
@@ -352,7 +651,7 @@ export default class ScheduleAdapter {
     const client = new SQSClient({ region: 'ap-southeast-2' });
 
     // const sportEvents = await new TennisliveClient().getSchedule()
-    const events = await new BetapiClient().getEvents()
+    const events = await new BetapiClient().getEvents('13')
     const fileList = await new S3ClientCustom().getFileList('tennis-match-schedule')
 
     const sportEvents = []
@@ -375,7 +674,7 @@ export default class ScheduleAdapter {
           continue
         }
 
-        if (eventDate !== '03/01/2025') {
+        if (eventDate !== '08/01/2025') {
           continue
         }
 
@@ -435,7 +734,7 @@ export default class ScheduleAdapter {
     console.log('>>>>total schedule number: ', sportEvents.length)
     console.log('>>>>checked number: ', fileList.length)
 
-    if (sqsMessageNumber === 0 && 44 === fileList.length) {
+    if (sqsMessageNumber === 0 && 271 === fileList.length) {
       await Promise.all(
         fileList.map(async file => {
           const content = await new S3ClientCustom().getFile('tennis-match-schedule', file)
@@ -528,4 +827,873 @@ export default class ScheduleAdapter {
 
     return requestResult
   }
+
+  async getScheduleTennis() {
+    const s3ClientCustom = new S3ClientCustom()
+
+    var requestResult = 'error'
+    const resultFile = await s3ClientCustom.getFile('tennis-match-schedule', 'result.json')
+
+    if (resultFile) {
+      insertMatchRecords(JSON.parse(resultFile), 'tennis_matches')
+      return toTTCsv(resultFile)
+    }
+
+    const queueUrl = 'https://sqs.ap-southeast-2.amazonaws.com/146261234111/tennis-match-schedule-queue'
+    const client = new SQSClient({ region: 'ap-southeast-2' });
+
+    const events = await new BetapiClient().getEvents('13')
+
+    const sportEvents = []
+
+    // check queue in SQS
+    const getQueueAttrCommand = new GetQueueAttributesCommand({
+      QueueUrl: queueUrl,
+      AttributeNames: ['All']
+    })
+
+    const fileList = await new S3ClientCustom().getFileList('tennis-match-schedule')
+
+    var getQueueAttrCommandResponse = await client.send(getQueueAttrCommand);
+    var sqsMessageNumber = Number(getQueueAttrCommandResponse.Attributes.ApproximateNumberOfMessages)
+
+    if (sqsMessageNumber === 0) {
+      for await (const event of events) {
+        const eventDateTime = new Date(parseInt(event.time) * 1000).toLocaleString('en-GB', { timeZone: 'Australia/Sydney' })
+        // const eventDate = eventDateTime.split(',')[0].trim()
+
+        if (event.player1.name.includes('/')) {
+          continue
+        }
+
+        const now = Date.now()
+        const checkStart = new Date(now)
+        checkStart.setMinutes(checkStart.getMinutes() + 15)
+        const checkEnd = new Date(now)
+        checkEnd.setHours(checkEnd.getHours() + 6)
+
+        // matches that not included in the schedule
+        if ((parseInt(event.time) * 1000) < checkStart.getTime() ||
+          (parseInt(event.time) * 1000) > checkEnd.getTime()) {
+          continue
+        }
+
+        const sportEvent = {
+          id: event.id,
+          date: eventDateTime.split(',')[0].trim(),
+          time: eventDateTime.split(',')[1].trim(),
+          stage: '',
+          url: '',
+          type: '13',
+          competitionName: '',
+          player1: {
+            id: event.player1.id,
+            name: event.player1.name,
+            country: '',
+            dob: '',
+            currentRanking: 0,
+            highestRanking: 0,
+            matchesTotal: 0,
+            matchesWon: 0,
+            url: '',
+            type: '',
+            prizeMoney: 0,
+            previousMatches: null,
+            parsedPreviousMatches: null,
+            incomingMatchUrl: '',
+            h2h: 0,
+          },
+          player2: {
+            id: event.player2.id,
+            name: event.player2.name,
+            country: '',
+            dob: '',
+            currentRanking: 0,
+            highestRanking: 0,
+            matchesTotal: 0,
+            matchesWon: 0,
+            url: '',
+            type: '',
+            prizeMoney: 0,
+            previousMatches: null,
+            parsedPreviousMatches: null,
+            incomingMatchUrl: '',
+            h2h: 0
+          }
+        }
+
+
+        sportEvents.push(sportEvent)
+      }
+    }
+
+    const fileContent = []
+
+    console.log('>>>>total schedule number: ', sportEvents.length)
+
+    if (sqsMessageNumber === 0 && this.matchNoTennis === fileList.length) {
+      await Promise.all(
+        fileList.map(async file => {
+          const content = await new S3ClientCustom().getFile('tennis-match-schedule', file)
+          fileContent.push(JSON.parse(content))
+        })
+      )
+
+      fileContent.forEach(content => {
+        var parsed = null
+
+        try {
+          parsed = JSON.parse(content)
+          fileContent.push(parsed)
+        } catch (ex) {
+          console.error('>>>>>failed to parse content')
+          return
+        }
+      })
+
+      await new S3ClientCustom()
+        .putFile('tennis-match-schedule', 'result.json', JSON.stringify(fileContent))
+
+      insertMatchRecords(fileContent, 'tennis_matches')
+
+      return fileContent
+    }
+
+    // check queue in SQS
+    var getQueueAttrCommandResponse = await client.send(getQueueAttrCommand);
+    var sqsMessageNumber = Number(getQueueAttrCommandResponse.Attributes.ApproximateNumberOfMessages)
+
+    if (sqsMessageNumber === 0) {
+      // get schedule and put it in the SQS
+      // this part will not timeout
+      await Promise.all(
+        sportEvents.map(async sporte => {
+          const input = {
+            QueueUrl: queueUrl,
+            MessageBody: JSON.stringify(sporte),
+            DelaySeconds: 10,
+          };
+          const command = new SendMessageCommand(input);
+          await client.send(command);
+        })
+      )
+
+      return 'message queue successfully'
+
+    }
+    else {
+      // loop while sqs has message
+      // this part might timeout after 15mins
+      while (sqsMessageNumber > 0) {
+        const receiveMessageCommand = new ReceiveMessageCommand({
+          MaxNumberOfMessages: 1,
+          MessageAttributeNames: ["All"],
+          QueueUrl: queueUrl,
+          WaitTimeSeconds: 20,
+          VisibilityTimeout: 20,
+        })
+
+        const receiveMessageCommandResult = await client.send(receiveMessageCommand);
+        var sportEvent = JSON.parse(receiveMessageCommandResult.Messages[0].Body)
+
+        try {
+          var checkPlayerResult = await new PlayerAdapter().compareSportEvent(sportEvent)
+
+          await new S3ClientCustom()
+            .putFile('tennis-match-schedule',
+              sportEvent.id + '.json',
+              JSON.stringify(checkPlayerResult))
+        } catch (ex) {
+          console.error('>>>>>check sport event parse error>>>', sportEvent.id)
+          console.error(ex)
+          await new S3ClientCustom()
+            .putFile('tennis-match-schedule',
+              sportEvent.id + '.json',
+              JSON.stringify(sportEvent))
+        }
+
+        await client.send(
+          new DeleteMessageCommand({
+            QueueUrl: queueUrl,
+            ReceiptHandle: receiveMessageCommandResult.Messages[0].ReceiptHandle,
+          }),
+        );
+
+        getQueueAttrCommandResponse = await client.send(getQueueAttrCommand);
+        sqsMessageNumber = Number(getQueueAttrCommandResponse.Attributes.ApproximateNumberOfMessages)
+      }
+    }
+
+    return requestResult
+  }
+
+  async getScheduleTT() {
+    const s3ClientCustom = new S3ClientCustom()
+
+    var requestResult = 'error'
+    const resultFile = await s3ClientCustom.getFile('table-tennis-match-schedule', 'result.json')
+    // const scheduleFile = await s3ClientCustom.getFile('bet365-table-tennis', 'schedule.json')
+
+    if (resultFile) {
+
+      // console.log('>>>>oddsData>>>>')
+      // console.log(JSON.parse(scheduleFile))
+
+      const matchesResult = JSON.parse(resultFile)
+
+      await Promise.all(matchesResult.map(async m => {
+        const matchSummary = await new BetapiClient().getEventSummaryRaw(m.id)
+
+        if (matchSummary !== null && matchSummary !== undefined) {
+          await insertPatternRecords([matchSummary])
+        }
+      }))
+
+      await insertMatchRecords(matchesResult, 'table_tennis_matches')
+      // await insertMatchRecords(JSON.parse(resultFile), 'table_tennis_matches', JSON.parse(scheduleFile))
+      await s3ClientCustom.deleteAllFiles('table-tennis-match-schedule')
+      return toTTCsv(resultFile)
+    }
+
+    const queueUrl = 'https://sqs.ap-southeast-2.amazonaws.com/146261234111/table-tennis-match-schedule-queue'
+    const client = new SQSClient({ region: 'ap-southeast-2' });
+
+    // const bet365Events = await new BetapiClient().getBet365Events('92')
+    const events = await new BetapiClient().getEvents('92')
+
+    const sportEvents = []
+
+    // check queue in SQS
+    const getQueueAttrCommand = new GetQueueAttributesCommand({
+      QueueUrl: queueUrl,
+      AttributeNames: ['All']
+    })
+
+    const fileList = await new S3ClientCustom().getFileList('table-tennis-match-schedule')
+
+    var getQueueAttrCommandResponse = await client.send(getQueueAttrCommand);
+    var sqsMessageNumber = Number(getQueueAttrCommandResponse.Attributes.ApproximateNumberOfMessages)
+
+    if (sqsMessageNumber === 0) {
+      for await (const event of events) {
+        const eventDateTime = new Date(parseInt(event.time) * 1000).toLocaleString('en-GB', { timeZone: 'Australia/Sydney' })
+
+        if (event.player1.name.includes('/')) {
+          continue
+        }
+
+        const now = Date.now()
+        const checkStart = new Date(now)
+        checkStart.setMinutes(checkStart.getMinutes() + 15)
+        const checkEnd = new Date(now)
+        checkEnd.setMinutes(checkEnd.getMinutes() + 35)
+        if ((parseInt(event.time) * 1000) < checkStart.getTime() ||
+          (parseInt(event.time) * 1000) > checkEnd.getTime()) {
+          continue
+        }
+
+
+        const bet365Event = null //bet365Events.find(e => e.secondaryId === event.id)
+
+        const sportEvent = {
+          id: event.id,
+          bet365EventId: bet365Event?.id,
+          date: eventDateTime.split(',')[0].trim(),
+          time: eventDateTime.split(',')[1].trim(),
+          stage: '',
+          url: '',
+          type: '92',
+          competitionName: '',
+          player1: {
+            id: event.player1.id,
+            name: event.player1.name,
+            country: '',
+            dob: '',
+            currentRanking: 0,
+            highestRanking: 0,
+            matchesTotal: 0,
+            matchesWon: 0,
+            url: '',
+            type: '',
+            prizeMoney: 0,
+            previousMatches: null,
+            parsedPreviousMatches: null,
+            incomingMatchUrl: '',
+            h2h: 0,
+          },
+          player2: {
+            id: event.player2.id,
+            name: event.player2.name,
+            country: '',
+            dob: '',
+            currentRanking: 0,
+            highestRanking: 0,
+            matchesTotal: 0,
+            matchesWon: 0,
+            url: '',
+            type: '',
+            prizeMoney: 0,
+            previousMatches: null,
+            parsedPreviousMatches: null,
+            incomingMatchUrl: '',
+            h2h: 0
+          }
+        }
+
+        sportEvents.push(sportEvent)
+      }
+    }
+
+    console.log('>>>>sportEvents: ', sportEvents.length)
+
+    const fileContent = []
+
+    let matchNoTT = 0
+    let content = await new S3ClientCustom().getFile('table-tennis-match-schedule', 'number.txt')
+    matchNoTT = Number(content)
+    if (content === null || content === undefined) {
+      await new S3ClientCustom()
+        .putFile('table-tennis-match-schedule', 'number.txt', `${sportEvents.length}`)
+    }
+
+    console.log('>>>>>>sqsMessageNumber : %s >>>>>matchNoTT : %s >>>>>>>fileList : %s', sqsMessageNumber, matchNoTT, fileList.length)
+
+    if (sqsMessageNumber === 0 && matchNoTT === (fileList.length - 1)) {
+      await Promise.all(
+        fileList.map(async file => {
+          if (file === 'number.txt') {
+            return
+          }
+
+          const content = await new S3ClientCustom().getFile('table-tennis-match-schedule', file)
+          fileContent.push(content)
+        })
+      )
+
+      fileContent.forEach(content => {
+        var parsed = null
+
+        try {
+          parsed = JSON.parse(content)
+          fileContent.push(parsed)
+        } catch (ex) {
+          console.error(ex)
+          console.error('>>>>>failed to parse content')
+          return
+        }
+      })
+
+      await new S3ClientCustom()
+        .putFile('table-tennis-match-schedule', 'result.json', JSON.stringify(fileContent))
+
+      // insertMatchRecords(fileContent, 'table_tennis_matches')
+
+      return 'result.json file stored successfully'
+    }
+
+
+    // check queue in SQS
+    var getQueueAttrCommandResponse = await client.send(getQueueAttrCommand);
+    var sqsMessageNumber = Number(getQueueAttrCommandResponse.Attributes.ApproximateNumberOfMessages)
+
+    if (sqsMessageNumber === 0) {
+      // get schedule and put it in the SQS
+      // this part will not timeout
+      await Promise.all(
+        sportEvents.map(async sporte => {
+          const input = {
+            QueueUrl: queueUrl,
+            MessageBody: JSON.stringify(sporte),
+            DelaySeconds: 10,
+          };
+          const command = new SendMessageCommand(input);
+          await client.send(command);
+        })
+      )
+
+      return 'message queue successfully'
+
+    }
+    else {
+      // loop while sqs has message
+      // this part might timeout after 15mins
+      while (sqsMessageNumber > 0) {
+        const receiveMessageCommand = new ReceiveMessageCommand({
+          MaxNumberOfMessages: 1,
+          MessageAttributeNames: ["All"],
+          QueueUrl: queueUrl,
+          WaitTimeSeconds: 20,
+          VisibilityTimeout: 20,
+        })
+
+
+        const receiveMessageCommandResult = await client.send(receiveMessageCommand);
+
+        if (receiveMessageCommandResult.Messages === undefined) {
+          requestResult = 'queue complete or error'
+          break
+        }
+
+        var sportEvent = JSON.parse(receiveMessageCommandResult.Messages[0].Body)
+
+        try {
+          var checkPlayerResult = await new PlayerAdapter().compareSportEvent(sportEvent)
+
+          await new S3ClientCustom()
+            .putFile('table-tennis-match-schedule',
+              sportEvent.id + '.json',
+              JSON.stringify(checkPlayerResult))
+        } catch (ex) {
+          console.error('>>>>>check sport event parse error>>>', sportEvent.id)
+          console.error(ex)
+          await new S3ClientCustom()
+            .putFile('table-tennis-match-schedule',
+              sportEvent.id + '.json',
+              JSON.stringify(sportEvent))
+        }
+
+        if (receiveMessageCommandResult.Messages === undefined) {
+          requestResult = 'queue complete or error'
+          break
+        }
+
+        await client.send(
+          new DeleteMessageCommand({
+            QueueUrl: queueUrl,
+            ReceiptHandle: receiveMessageCommandResult.Messages[0].ReceiptHandle,
+          }),
+        );
+
+        getQueueAttrCommandResponse = await client.send(getQueueAttrCommand);
+        sqsMessageNumber = Number(getQueueAttrCommandResponse.Attributes.ApproximateNumberOfMessages)
+      }
+    }
+
+    return requestResult
+  }
+
+  async getScheduleEsports() {
+    const s3ClientCustom = new S3ClientCustom()
+
+    var requestResult = 'error'
+    const resultFile = await s3ClientCustom.getFile('esports-match-schedule', 'result.json')
+
+    if (resultFile) {
+      return toTTCsv(resultFile)
+    }
+
+    const queueUrl = 'https://sqs.ap-southeast-2.amazonaws.com/146261234111/esports-match-schedule-queue'
+    const client = new SQSClient({ region: 'ap-southeast-2' });
+
+    const events = await new BetapiClient().getEvents('151')
+
+    const sportEvents = []
+
+    // check queue in SQS
+    const getQueueAttrCommand = new GetQueueAttributesCommand({
+      QueueUrl: queueUrl,
+      AttributeNames: ['All']
+    })
+
+    const fileList = await new S3ClientCustom().getFileList('esports-match-schedule')
+
+    var getQueueAttrCommandResponse = await client.send(getQueueAttrCommand);
+    var sqsMessageNumber = Number(getQueueAttrCommandResponse.Attributes.ApproximateNumberOfMessages)
+
+    if (sqsMessageNumber === 0) {
+      for await (const event of events) {
+        const eventDateTime = new Date(parseInt(event.time) * 1000).toLocaleString('en-GB', { timeZone: 'Australia/Sydney' })
+        const eventDate = eventDateTime.split(',')[0].trim()
+
+        if (event.player1.name.includes('/')) {
+          continue
+        }
+
+        if (eventDate !== this.currentCheckDate) {
+          continue
+        }
+
+        const sportEvent = {
+          id: event.id,
+          date: eventDateTime.split(',')[0].trim(),
+          time: eventDateTime.split(',')[1].trim(),
+          stage: '',
+          url: '',
+          type: '151',
+          competitionName: '',
+          player1: {
+            id: event.player1.id,
+            name: event.player1.name,
+            country: '',
+            dob: '',
+            currentRanking: 0,
+            highestRanking: 0,
+            matchesTotal: 0,
+            matchesWon: 0,
+            url: '',
+            type: '',
+            prizeMoney: 0,
+            previousMatches: null,
+            parsedPreviousMatches: null,
+            incomingMatchUrl: '',
+            h2h: 0,
+          },
+          player2: {
+            id: event.player2.id,
+            name: event.player2.name,
+            country: '',
+            dob: '',
+            currentRanking: 0,
+            highestRanking: 0,
+            matchesTotal: 0,
+            matchesWon: 0,
+            url: '',
+            type: '',
+            prizeMoney: 0,
+            previousMatches: null,
+            parsedPreviousMatches: null,
+            incomingMatchUrl: '',
+            h2h: 0
+          }
+        }
+
+
+        sportEvents.push(sportEvent)
+      }
+    }
+
+    const fileContent = []
+
+    console.log('>>>>total schedule number: ', sportEvents.length)
+
+    if (sqsMessageNumber === 0 && this.matchNoEsports === fileList.length) {
+      await Promise.all(
+        fileList.map(async file => {
+          const content = await new S3ClientCustom().getFile('esports-match-schedule', file)
+          fileContent.push(JSON.parse(content))
+        })
+      )
+
+      fileContent.forEach(content => {
+        var parsed = null
+
+        try {
+          parsed = JSON.parse(content)
+          fileContent.push(parsed)
+        } catch (ex) {
+          console.error('>>>>>failed to parse content')
+          return
+        }
+      })
+
+      await new S3ClientCustom()
+        .putFile('esports-match-schedule', 'result.json', JSON.stringify(fileContent))
+
+      return fileContent
+    }
+
+
+    // check queue in SQS
+    var getQueueAttrCommandResponse = await client.send(getQueueAttrCommand);
+    var sqsMessageNumber = Number(getQueueAttrCommandResponse.Attributes.ApproximateNumberOfMessages)
+
+    if (sqsMessageNumber === 0) {
+      // get schedule and put it in the SQS
+      // this part will not timeout
+      await Promise.all(
+        sportEvents.map(async sporte => {
+          const input = {
+            QueueUrl: queueUrl,
+            MessageBody: JSON.stringify(sporte),
+            DelaySeconds: 10,
+          };
+          const command = new SendMessageCommand(input);
+          await client.send(command);
+        })
+      )
+
+      return 'message queue successfully'
+
+    }
+    else {
+      // loop while sqs has message
+      // this part might timeout after 15mins
+      while (sqsMessageNumber > 0) {
+        const receiveMessageCommand = new ReceiveMessageCommand({
+          MaxNumberOfMessages: 1,
+          MessageAttributeNames: ["All"],
+          QueueUrl: queueUrl,
+          WaitTimeSeconds: 20,
+          VisibilityTimeout: 20,
+        })
+
+        const receiveMessageCommandResult = await client.send(receiveMessageCommand);
+        var sportEvent = JSON.parse(receiveMessageCommandResult.Messages[0].Body)
+
+        try {
+          var checkPlayerResult = await new PlayerAdapter().compareSportEvent(sportEvent)
+
+          await new S3ClientCustom()
+            .putFile('esports-match-schedule',
+              sportEvent.id + '.json',
+              JSON.stringify(checkPlayerResult))
+        } catch (ex) {
+          console.error('>>>>>check sport event parse error>>>', sportEvent.id)
+          console.error(ex)
+          await new S3ClientCustom()
+            .putFile('esports-match-schedule',
+              sportEvent.id + '.json',
+              JSON.stringify(sportEvent))
+        }
+
+        await client.send(
+          new DeleteMessageCommand({
+            QueueUrl: queueUrl,
+            ReceiptHandle: receiveMessageCommandResult.Messages[0].ReceiptHandle,
+          }),
+        );
+
+        getQueueAttrCommandResponse = await client.send(getQueueAttrCommand);
+        sqsMessageNumber = Number(getQueueAttrCommandResponse.Attributes.ApproximateNumberOfMessages)
+      }
+    }
+
+    return requestResult
+  }
+
+  async getTableTennisSchedule() {
+    const fileName = await new S3ClientCustom().getLatestModified('table-tennis-match-schedule')
+    const content = await new S3ClientCustom().getFile('table-tennis-match-schedule', fileName)
+
+    const response = await new BetapiClient().parseTableTennisEvent(content)
+
+
+    return response
+  }
+
+  async getTableTennisNext() {
+    const events = await new BetapiClient().getEvents('92')
+
+    const latestEvents = events.filter(event => parseInt(event.time) > Date.now() / 1000)
+    const sorted = latestEvents.sort((a, b) => parseInt(a.time) - parseInt(b.time))
+
+    sorted.map(event => {
+      const eventDateTime = new Date(parseInt(event.time) * 1000).toLocaleString('en-GB', { timeZone: 'Australia/Sydney' })
+      event.time = eventDateTime
+    })
+
+    return sorted
+  }
+
+  async storeToDynamoDB(resultFile: any) {
+    const events = JSON.parse(resultFile)
+
+    const putEvents = events.map(event => {
+      if (event.p1Name !== null && event.p1Name !== undefined && event.p1Name !== '' &&
+        event.p2Name !== null && event.p2Name !== undefined && event.p2Name !== '') {
+        return putItem('table_tennis_h2h_bm', event)
+      }
+    })
+
+    console.log('>>>>put table tennis Events: ', putEvents.length)
+
+    await Promise.all(putEvents)
+  }
+
+  async getPendingResults(sport: string) {
+    var tableName = 'table_tennis_matches'
+    if (sport === 'tennis') {
+      tableName = 'tennis_matches'
+    }
+
+    const pendingMatchesResult = await getPendingMatchRecords(tableName)
+
+    for (const match of pendingMatchesResult) {
+
+      const event = {
+        id: match.id,
+        date: '',
+        time: '',
+        stage: '',
+        url: '',
+        type: sport === 'tennis' ? '13' : '92',
+        competitionName: '',
+        player1: {
+          id: match.p1_id,
+          name: match.p1_name,
+          country: '',
+          dob: '',
+          currentRanking: 0,
+          highestRanking: 0,
+          matchesTotal: 0,
+          matchesWon: 0,
+          url: '',
+          type: '',
+          prizeMoney: 0,
+          previousMatches: null,
+          parsedPreviousMatches: null,
+          incomingMatchUrl: '',
+          h2h: 0,
+        },
+        player2: {
+          id: match.p2_id,
+          name: match.p2_name,
+          country: '',
+          dob: '',
+          currentRanking: 0,
+          highestRanking: 0,
+          matchesTotal: 0,
+          matchesWon: 0,
+          url: '',
+          type: '',
+          prizeMoney: 0,
+          previousMatches: null,
+          parsedPreviousMatches: null,
+          incomingMatchUrl: '',
+          h2h: 0
+        }
+      }
+
+      const result = await new PlayerAdapter().getResult(event);
+
+      console.log('>>>result ', result)
+
+      if (result !== null) {
+        await updateMatchRecordWinner(result, match.id, tableName)
+      }
+    }
+
+    return `${pendingMatchesResult.length} rows of ${tableName} result filled`
+  }
+
+  async getBet365TableTennisList() {
+
+    const eventCollection = []
+
+    const s3ClientCustom = new S3ClientCustom()
+    const htmlFile = await s3ClientCustom.getFile('bet365-table-tennis', 'table-tennis.html')
+
+    const matchGroup = []
+    const parsedMatchHtml = nodeHtmlParser.parse(htmlFile)
+
+    const markets = parsedMatchHtml.querySelectorAll('.gl-MarketGroupContainer ')
+    const teamNames = parsedMatchHtml.querySelectorAll('.rcl-ParticipantFixtureDetailsTeam_TeamName ')
+    const odds = parsedMatchHtml.querySelectorAll('.sgl-ParticipantOddsOnly80_Odds').map(odd => odd.text)
+    const eventsTime = parsedMatchHtml.querySelectorAll('.rcl-ParticipantFixtureDetails_BookCloses ').map(odd => odd.text)
+
+    console.log('>>>>markets: ', markets.length)
+
+    markets.forEach((market, _index) => {
+      const teamContainers = market.querySelectorAll('.rcl-ParticipantFixtureDetails_TeamAndScoresContainer')
+      matchGroup.push(teamContainers.length)
+    })
+
+    console.log('>>>>odds: ', odds.length)
+    console.log('>>>>matchGroup: ', matchGroup)
+    console.log('>>>>teamNames: ', teamNames.length)
+
+    var start = 0
+    var totalGroup = 0
+    matchGroup.forEach((matchNoInGroup, oddGroupIdx) => {
+
+      console.log('>>>>matchNoInGroup: ', matchNoInGroup)
+      console.log('>>>>start: ', start)
+      totalGroup += matchNoInGroup
+      console.log('>>>>totalGroup: ', totalGroup)
+
+      const now = Date.now()
+      const nowDate = new Date(now)
+
+      for (var i = start; i < totalGroup; i++) {
+        const sportEvent = playerNamesToSportEvent('', '', teamNames[i * 2].text, '', '', teamNames[(i * 2) + 1].text)
+        const p1Odd = oddGroupIdx === 0 ? odds[i] : odds[start + i]
+        const p2Odd = oddGroupIdx === 0 ? odds[matchNoInGroup + i] : odds[start + matchNoInGroup + i]
+
+
+        if (eventsTime[i - 1] !== undefined && eventsTime[i - 1] !== null
+          && eventsTime[i - 1].split(':')[0] === '23'
+          && eventsTime[i] !== undefined && eventsTime[i] !== null
+          && eventsTime[i].split(':')[0] === '00') {
+          nowDate.setDate(nowDate.getDate() + 1)
+        }
+
+        sportEvent.date = nowDate.toLocaleString('en-GB', { timeZone: 'Australia/Sydney' })
+        sportEvent.time = eventsTime[i]
+        sportEvent['dateTime'] = new Date(sportEvent.date + ' ' + sportEvent.time).getTime()
+        sportEvent.player1Odd = p1Odd !== undefined && p1Odd !== null ? Number(p1Odd) : 0
+        sportEvent.player2Odd = p2Odd !== undefined && p2Odd !== null ? Number(p2Odd) : 0
+        eventCollection.push(sportEvent)
+      }
+
+      start = eventCollection.length
+    })
+
+
+    // eventCollection.forEach((event, index) => {
+    //   console.log('>>>>event no %s', index)
+    //   console.log('>>>>event player 1 name %s - %s ', event.player1.name, event.player1Odd)
+    //   console.log('>>>>event player 2 name %s - %s ', event.player2.name, event.player2Odd)
+    // })
+
+    // const oddSafeMatches = eventCollection.filter(event => event.player1Odd >= 3.4 || event.player2Odd >= 3.4)
+
+    // console.log('>>>>addSafeMatches: ', oddSafeMatches.length)
+
+    // oddSafeMatches.sort((a, b) => a.dateTime - b.dateTime).forEach(event => {
+    //   console.log('>>>>event date time: %s %s', event.date, event.time)
+    //   console.log('>>>>event player 1 name %s - %s ', event.player1.name, event.player1Odd)
+    //   console.log('>>>>event player 2 name %s - %s ', event.player2.name, event.player2Odd)
+    // })
+
+    await new S3ClientCustom()
+      .putFile('bet365-table-tennis', 'schedule.json', JSON.stringify(eventCollection))
+
+    return 'test'
+  }
+
+  async getSafeMatches() {
+    var safeMatchesTTResult = await getTTSafeMatches()
+    if (safeMatchesTTResult.length === 0) { 
+      return 'no match found, email not sent'
+    }
+
+    const warning = [{
+      "warning": "DO NOT BET IF STILL PLAYING. LOST $10",
+      "CASHOUT": "2v0, 2v1, 2v2+2 is a MUST"
+    }]
+    const matchesCount = [{ "count": safeMatchesTTResult.length }]
+    const data = [...warning, ...matchesCount, ...safeMatchesTTResult]
+
+    const ses = new SESClient({ region: "ap-southeast-2" });
+    const emailParams = {
+        Source: "matches@togetherwin.com.au", // The verified sender's email
+        Destination: {
+          ToAddresses: ["matches@togetherwin.com.au"]
+        },
+        Message: {
+            Body: {
+                Text: { Data: JSON.stringify(data, null, 2) }
+            },
+          Subject: { Data: 'time to bet' }
+        }
+    };
+
+    
+    try {
+        const command = new SendEmailCommand(emailParams);
+        const sendResponse = await ses.send(command);
+        console.log("Email sent successfully. MessageId:", sendResponse.MessageId);
+      
+        const s3ClientCustom = new S3ClientCustom()
+        await s3ClientCustom.deleteAllFiles('safe-matches')
+        await s3ClientCustom.putFile('safe-matches', 'matches.json', JSON.stringify(data))
+        console.log('file stored in s3');
+      
+        return { statusCode: 200, body: "Email sent and file is stored" };
+    } catch (error) {
+        console.error("Failed to send email:", error);
+        return { statusCode: 500, body: "Email failed to send." };
+    }
+  }
 }
+
