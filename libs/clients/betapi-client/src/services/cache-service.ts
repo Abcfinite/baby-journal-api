@@ -10,7 +10,7 @@ export default class CacheService {
         return dataFile
     }
 
-    deleteEventCache = async (sportId: string) => {
+    deleteEventCache = async (_: string) => {
         await new S3ClientCustom().deleteAllFiles('betapi-cache')
     }
 

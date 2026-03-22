@@ -5,6 +5,7 @@ export interface Event {
   id: string,
   secondaryId?: string,
   time: string,
+  isYesterday?: boolean,
   player1: Player,
   player2: Player,
   odds?: Odds,

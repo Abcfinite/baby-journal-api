@@ -23,6 +23,10 @@ export default class EndedService {
 
     let fullEndedEvents: Event[] = []
 
+    if (!data['results'] || data['results'].length === 0) { 
+      return null
+    }
+
     const pageOneEvents = data['results'].map(r => {
       return new EventParser().parse(r)
     })

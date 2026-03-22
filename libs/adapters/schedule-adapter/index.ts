@@ -19,7 +19,7 @@ import {
 } from './src/utils/database'
 
 import S3ClientCustom from '@abcfinite/s3-client-custom'
-import { putItem, executeScan, executeQuery } from '@abcfinite/dynamodb-client'
+import { putItem, executeScan } from '@abcfinite/dynamodb-client'
 import { playerNamesToSportEvent } from "@abcfinite/tennislive-client/src/types/sportEvent"
 import PlayerAdapter from '@abcfinite/player-adapter'
 import {
@@ -38,7 +38,7 @@ export default class ScheduleAdapter {
 
   currentCheckDate = '14/06/2025' //esports only
   matchNoEsports = 27
-  matchNoTennis = 93
+  matchNoTennis = 27
 
   async removeAllCache() {
     const s3ClientCustom = new S3ClientCustom()
@@ -674,51 +674,51 @@ export default class ScheduleAdapter {
           continue
         }
 
-        if (eventDate !== '08/01/2025') {
+        if (eventDate !== '16/03/2026') {
           continue
         }
 
-        const query1 = {
-          KeyConditionExpression: '#id = :id',
-          ExpressionAttributeNames: {
-            '#id': 'id'
-          },
-          ExpressionAttributeValues: {
-            ':id': { S: event.player1.id }
-          },
-          ProjectionExpression: 'id, full_name, url_found, tennislive_url',
-          TableName: 'tennis_players',
-        }
-        const result1 = await executeQuery(query1)
+        // const query1 = {
+        //   KeyConditionExpression: '#id = :id',
+        //   ExpressionAttributeNames: {
+        //     '#id': 'id'
+        //   },
+        //   ExpressionAttributeValues: {
+        //     ':id': { S: event.player1.id }
+        //   },
+        //   ProjectionExpression: 'id, full_name, url_found, tennislive_url',
+        //   TableName: 'tennis_players',
+        // }
+        // const result1 = await executeQuery(query1)
 
-        const query2 = {
-          KeyConditionExpression: '#id = :id',
-          ExpressionAttributeNames: {
-            '#id': 'id'
-          },
-          ExpressionAttributeValues: {
-            ':id': { S: event.player2.id }
-          },
-          ProjectionExpression: 'id, full_name, url_found, tennislive_url',
-          TableName: 'tennis_players',
-        }
+        // const query2 = {
+        //   KeyConditionExpression: '#id = :id',
+        //   ExpressionAttributeNames: {
+        //     '#id': 'id'
+        //   },
+        //   ExpressionAttributeValues: {
+        //     ':id': { S: event.player2.id }
+        //   },
+        //   ProjectionExpression: 'id, full_name, url_found, tennislive_url',
+        //   TableName: 'tennis_players',
+        // }
 
-        const result2 = await executeQuery(query2)
+        // const result2 = await executeQuery(query2)
 
-        const p1Record = result1.Items[0]
-        const p2Record = result2.Items[0]
+        // const p1Record = result1.Items[0]
+        // const p2Record = result2.Items[0]
 
-        if (!(p1Record['url_found']['BOOL'] && p2Record['url_found']['BOOL'])) {
-          continue
-        }
+        // if (!(p1Record['url_found']['BOOL'] && p2Record['url_found']['BOOL'])) {
+        //   continue
+        // }
 
-        const sportEvent = playerNamesToSportEvent(event.player1.id,
-          p1Record['tennislive_url']['S'],
-          event.player1.name,
-          event.player2.id,
-          p2Record['tennislive_url']['S'],
-          event.player2.name,
-        )
+        // const sportEvent = playerNamesToSportEvent(event.player1.id,
+        //   p1Record['tennislive_url']['S'],
+        //   event.player1.name,
+        //   event.player2.id,
+        //   p2Record['tennislive_url']['S'],
+        //   event.player2.name,
+        // )
 
         sportEvent.id = event.id
         sportEvent.date = eventDateTime.split(',')[0].trim()
@@ -1041,13 +1041,13 @@ export default class ScheduleAdapter {
 
       const matchesResult = JSON.parse(resultFile)
 
-      await Promise.all(matchesResult.map(async m => {
-        const matchSummary = await new BetapiClient().getEventSummaryRaw(m.id)
+      // await Promise.all(matchesResult.map(async m => {
+      //   const matchSummary = await new BetapiClient().getEventSummaryRaw(m.id)
 
-        if (matchSummary !== null && matchSummary !== undefined) {
-          await insertPatternRecords([matchSummary])
-        }
-      }))
+      //   if (matchSummary !== null && matchSummary !== undefined) {
+      //     await insertPatternRecords([matchSummary])
+      //   }
+      // }))
 
       await insertMatchRecords(matchesResult, 'table_tennis_matches')
       // await insertMatchRecords(JSON.parse(resultFile), 'table_tennis_matches', JSON.parse(scheduleFile))
@@ -1558,7 +1558,7 @@ export default class ScheduleAdapter {
 
       console.log('>>>result ', result)
 
-      if (result !== null) {
+      if (result) {
         await updateMatchRecordWinner(result, match.id, tableName)
       }
     }

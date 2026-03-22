@@ -30,7 +30,8 @@ export default class EventParser {
       h2hP1: undefined,
       h2hP2: undefined,
       l10P1: undefined,
-      l10P2: undefined
+      l10P2: undefined,
+      isYesterday: null
     }
   }
 

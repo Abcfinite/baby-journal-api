@@ -13,6 +13,7 @@ export interface SportEvent {
   player2Odd?: number,
   player1: Player,
   player2: Player,
+  isYesterday?: boolean,
 }
 
 export const playerNamesToSportEvent = (player1Id: string, player1Url: string,
@@ -25,6 +26,7 @@ export const playerNamesToSportEvent = (player1Id: string, player1Url: string,
     type: '',
     url: '',
     competitionName: '',
+    isYesterday: null,
     player1: {
       id: player1Id,
       name: player1Name,

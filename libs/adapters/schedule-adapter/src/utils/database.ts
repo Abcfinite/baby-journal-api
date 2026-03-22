@@ -61,11 +61,11 @@ export const insertMatchRecords = async (matches: Array<any>, tableName: string)
             //     oddData = oddsData.find((m) => m.player1.name = match['p1Name'] && m.player2.name === match['p2Name'])
             // }
 
-            tableTennisAttributes = ', p1_last_game_won, p2_last_game_won, p1_last_game_set_score, p2_last_game_set_score, p1_last_game_opponent_name, p2_last_game_opponent_name, p1_p1last, p1_p2last, p1_p2last_1, p2_p1last, p2_p1last_1, p2_p2last, bm_player_names'
+            tableTennisAttributes = ', p1_last_game_won, p2_last_game_won, p1_last_game_set_score, p2_last_game_set_score, p1_last_game_opponent_name, p2_last_game_opponent_name, p1_p1last, p1_p2last, p1_p2last_1, p2_p1last, p2_p1last_1, p2_p2last, p1_set_today, p2_set_today, bm_player_names'
             tableTennisValues = `, ${match['p1LastGameWon']}, ${match['p2LastGameWon']}, 
                 '${match['p1LastGameSetScore']}', '${match['p2LastGameSetScore']}', 
                 '${match['p1LastGameOpponentName']}', '${match['p2LastGameOpponentName']}',
-                '${match['p1P1Last'].join('')}', '${match['p1P2Last'].join('')}', '${match['p1P2Last_1'].join('')}', '${match['p2P1Last'].join('')}', '${match['p2P1Last_1'].join('')}', '${match['p2P2Last'].join('')}', '${match['bmPlayerNames'].join(', ')}'`
+                '${match['p1P1Last'].join('')}', '${match['p1P2Last'].join('')}', '${match['p1P2Last_1'].join('')}', '${match['p2P1Last'].join('')}', '${match['p2P1Last_1'].join('')}', '${match['p2P2Last'].join('')}', ${match['p1SetToday']}, ${match['p2SetToday']}, '${match['bmPlayerNames'].join(', ')}'`
         }
 
         try {
@@ -77,7 +77,7 @@ export const insertMatchRecords = async (matches: Array<any>, tableName: string)
 
             const sql = `INSERT INTO ${tableName} (id, match_time, p1_id, p2_id, p1_name, p2_name, odd_p1, odd_p2, odd_p1_2, odd_p2_2,h2h_p1, h2h_p2, bm_p1, bm_p2, h2h_last_won_player,l10_p1, l10_p2, l30_p1, l30_p2,
                     p1_won_won, p1_won_lost, p1_lost_won, p1_lost_lost,
-                    p2_won_won, p2_won_lost, p2_lost_won, p2_lost_lost, p1_match_no, p2_match_no, p1_win_count, p2_win_count, p1_streak, p2_streak                    
+                    p2_won_won, p2_won_lost, p2_lost_won, p2_lost_lost, p1_match_no, p2_match_no, p1_win_count, p2_win_count, p1_streak, p2_streak            
                      ${tableTennisAttributes})
                 VALUES ('${match['id']}', '${localTimestamp}', '${match['p1Id']}', '${match['p2Id']}', '${match['p1Name']}', '${match['p2Name']}', ${match['p1Odd']}, ${match['p2Odd']}, ${match['p1Odd2']}, ${match['p2Odd2']}, 
                     ${match['h2hP1']}, ${match['h2hP2']}, ${match['bmP1']}, ${match['bmP2']}, ${match['h2hLastWinner']}, ${match['p1L10']}, ${match['p2L10']}, ${match['p1L30']}, ${match['p2L30']},

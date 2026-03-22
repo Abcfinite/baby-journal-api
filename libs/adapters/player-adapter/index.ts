@@ -34,6 +34,10 @@ export default class PlayerAdapter {
 
     const player1Matches = await new BetapiClient().getPlayerEndedMatches(player1Id, sportEvent.type)
 
+    if (!player1Matches) {
+      return null
+    }
+
     const match = player1Matches.events.find(m => m.id === sportEvent.id)
 
     if (match !== undefined && match !== null &&
@@ -48,7 +52,6 @@ export default class PlayerAdapter {
 
     return null
   }
-
 
   async compareSportEvent(sportEvent: SportEvent) {
 
@@ -315,6 +318,26 @@ export default class PlayerAdapter {
     //   p2: this.p2WinCurrentL10(p2Match1L10, p2Match2L10, p2Match3L10, p2Match4L10, p2Match5L10, p1L10, p2L10)
     // }
 
+
+    const player1MatchTimeGrouped = this.groupEventsByTimeGap(player1Matches, 6)
+    const player2MatchTimeGrouped = this.groupEventsByTimeGap(player2Matches, 6)
+
+    console.log('>>>>>>>player1MatchTimeGrouped.length :', player1MatchTimeGrouped.length)
+    console.log('>>>>>>>player2MatchTimeGrouped.length :', player2MatchTimeGrouped.length)
+
+    const player1SetToday = player1MatchTimeGrouped[0].map(p1m => p1m.score.split('-'))
+        .flat()
+      .reduce((sum, val) => sum + parseInt(val), 0)
+    
+    
+    console.log('>>>>>>>player1MatchTimeGrouped[0].length :', player1MatchTimeGrouped[0].length)
+
+    const player2SetToday = player2MatchTimeGrouped[0].map(p2m => p2m.score.split('-'))
+        .flat()
+        .reduce((sum, val) => sum + parseInt(val), 0)
+
+    console.log('>>>>>>>player2MatchTimeGrouped[0].length :', player2MatchTimeGrouped[0].length)
+    
     const result = {
       "id": sportEvent.id,
       "date": sportEvent.date,
@@ -378,7 +401,9 @@ export default class PlayerAdapter {
       'p2WinCount': player2MatchesSum.winCount,
       "setScore": 'waiting',
       "winner": 'waiting',
-      bmPlayerNames
+      bmPlayerNames,
+      'p1SetToday': player1SetToday,
+      'p2SetToday': player2SetToday,
     }
 
     if (sportEvent.type !== '92') return result
@@ -498,6 +523,101 @@ export default class PlayerAdapter {
     }
 
     return tableTennisResult
+  }
+
+  /**
+   * Group events by time gaps. When gap > thresholdHours, create a new group
+   * Returns array of groups, each group containing events within the threshold
+   */
+  groupEventsByTimeGap(events: any[], thresholdHours: number = 6): any[][] {
+    if (!events || events.length === 0) return []
+
+    // Sort events by time (latest first)
+    const sortedEvents = [...events].sort((a, b) => {
+      const timeA = this.getEventTimeInMs(a)
+      const timeB = this.getEventTimeInMs(b)
+      return timeB - timeA
+    })
+
+    const thresholdMs = thresholdHours * 60 * 60 * 1000
+    const groups: any[][] = []
+    let currentGroup: any[] = [sortedEvents[0]]
+
+    for (let i = 1; i < sortedEvents.length; i++) {
+      const prevEvent = sortedEvents[i - 1]
+      const currentEvent = sortedEvents[i]
+
+      const prevTime = this.getEventTimeInMs(prevEvent)
+      const currentTime = this.getEventTimeInMs(currentEvent)
+      const gapMs = Math.abs(currentTime - prevTime)
+
+      console.log(`>>>Event ${i - 1} time: ${new Date(prevTime).toLocaleString()}, Event ${i} time: ${new Date(currentTime).toLocaleString()}`)
+      console.log(`>>>Gap between event ${i - 1} and ${i}: ${gapMs / (60 * 1000)} minutes`)
+
+      if (gapMs > thresholdMs) {
+        // Gap exceeded, start new group
+        groups.push(currentGroup)
+        currentGroup = [currentEvent]
+      } else {
+        // Gap within threshold, add to current group
+        currentGroup.push(currentEvent)
+      }
+    }
+
+    // Push the last group
+    if (currentGroup.length > 0) {
+      groups.push(currentGroup)
+    }
+
+    return groups
+  }
+
+  /**
+   * Get event time in milliseconds. Handles both epoch timestamps and formatted time/date strings
+   */
+  private getEventTimeInMs(event: any): number {
+    // If event has numeric time (epoch timestamp), use it directly
+    if (typeof event.time === 'number') {
+      return event.time * 1000 // Convert seconds to milliseconds
+    }
+
+    // If event has string time that is numeric (epoch timestamp string)
+    if (typeof event.time === 'string' && /^\d+$/.test(event.time)) {
+      const epochSeconds = parseInt(event.time, 10)
+      return epochSeconds * 1000 // Convert seconds to milliseconds
+    }
+
+    // If event has numeric createdAt (epoch timestamp), use it
+    if (typeof event.createdAt === 'number') {
+      return event.createdAt * 1000
+    }
+
+    // Otherwise, try to parse formatted time/date strings
+    if (event.time && event.date && typeof event.time === 'string' && typeof event.date === 'string') {
+      return this.timeStringToEpoch(event.time, event.date)
+    }
+
+    // Fallback: return 0 if unable to parse
+    console.warn('Unable to parse event time', event)
+    return 0
+  }
+
+  /**
+   * Convert formatted time string and date to epoch milliseconds
+   * timeStr format: "HH:mm:ss" (from toLocaleTimeString)
+   * dateStr format: "DD/MM/YYYY" (from toLocaleDateString)
+   */
+  private timeStringToEpoch(timeStr: string, dateStr: string): number {
+    try {
+      if (!timeStr || !dateStr) return 0
+      const [day, month, year] = dateStr.split('/').map(Number)
+      const [hours, minutes, seconds] = timeStr.split(':').map(Number)
+      const date = new Date(year, month - 1, day, hours || 0, minutes || 0, seconds || 0)
+      return date.getTime()
+    } catch (e) {
+      console.error(`Error parsing time: ${timeStr} and date: ${dateStr}`, e)
+      return 0
+    }
   }
 
   toDecimal(str) {
